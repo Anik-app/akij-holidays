@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Akij Holidays — enterprise travel document management" />
+<title>Akij Holidays — Travel Management System</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- Quick-Create card (top of page) ---------- */
+  .qc-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px 22px;
+    box-shadow: var(--shadow-xs);
+    margin-bottom: 22px;
+  }
+  .qc-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .qc-head h2 {
+    margin: 0; font-size: 15px; font-weight: 700; color: var(--text);
+    display: inline-flex; align-items: center; gap: 8px;
+    letter-spacing: -.01em;
+  }
+  .qc-head h2 .em { font-size: 18px; }
+  .qc-head .qc-sub { font-size: 12.5px; color: var(--text-muted); }
+  .qc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .qc-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 12px; border-radius: 12px;
+    font-weight: 600; font-size: 13.5px;
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s;
+    cursor: pointer;
+    font-family: var(--font);
+  }
+  .qc-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--primary); color: var(--primary); }
+  .qc-btn.primary {
+    background: linear-gradient(135deg, #8e011a 0%, #b0032a 100%);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 4px 14px rgba(142,1,26,.22);
+  }
+  .qc-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(142,1,26,.32); color: #fff; }
+  .qc-btn.accent {
+    background: linear-gradient(135deg, #004aad 0%, #0369a1 100%);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 4px 14px rgba(0,74,173,.22);
+  }
+  .qc-btn.accent:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,74,173,.32); color: #fff; }
+  .qc-btn .em { font-size: 18px; line-height: 1; }
+  .qc-btn.sync .em { transition: transform .4s ease; }
+  .qc-btn.sync.busy .em { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .qc-progress { margin-top: 10px; font-size: 12px; color: var(--text-muted); min-height: 16px; }
+  .qc-progress .bar { height: 4px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .qc-progress .bar > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8e011a, #d81a3f); transition: width .25s ease; }
+
+  /* ---------- Stats ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-xs);
+    display: flex; align-items: center; gap: 14px;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s;
+  }
+  .stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: rgba(142,1,26,.25); }
+  .stat-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: grid; place-items: center; font-size: 20px; flex-shrink: 0;
+  }
+  .stat-icon.c1 { background: rgba(0,74,173,.13); color: #004aad; }
+  .stat-icon.c2 { background: rgba(142,1,26,.13); color: #8e011a; }
+  .stat-icon.c3 { background: rgba(15,157,88,.14); color: #0f9d58; }
+  .stat-icon.c4 { background: rgba(245,159,0,.15); color: #b57900; }
+  .stat-icon.c5 { background: rgba(124,58,237,.14); color: #6d28d9; }
+  .stat-body { min-width: 0; flex: 1; }
+  .stat-label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.1; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ---------- Section headers ---------- */
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 4px 0 12px; gap: 12px; flex-wrap: wrap;
+  }
+  .section-head h2 { margin: 0; font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -.01em; text-transform: uppercase; letter-spacing: .06em; }
+  .section-head .head-actions { display: flex; gap: 8px; }
+
+  /* ---------- Recent list ---------- */
+  .recent-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .recent-item {
+    display: grid;
+    grid-template-columns: 44px 1fr auto auto;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background-color .12s;
+  }
+  .recent-item:last-child { border-bottom: none; }
+  .recent-item:hover { background: var(--surface-2); }
+  .ri-icon {
+    width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    font-size: 18px; background: var(--surface-2); color: var(--primary);
+  }
+  .ri-name { font-weight: 600; color: var(--text); font-size: 13.5px; }
+  .ri-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .ri-meta .amount { color: var(--primary); font-weight: 600; }
+  .ri-open {
+    color: var(--primary);
+    text-decoration: none; font-weight: 600; font-size: 13px;
+    padding: 6px 10px; border-radius: 8px; transition: background-color .12s;
+  }
+  .ri-open:hover { background: rgba(142,1,26,.08); }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .badge-synced { background: rgba(15,157,88,.14); color: #0f9d58; }
+  .badge-cloud { background: rgba(2,132,199,.14); color: #0369a1; }
+
+  /* ---------- Cloud status strip ---------- */
+  .cloud-strip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 16px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .cloud-strip .cs-title { font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+  .cloud-strip .cs-line { color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
+  .cloud-strip .cs-line strong { color: var(--text); font-weight: 600; }
+  .cloud-strip .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e0; display: inline-block; }
+  .cloud-strip .dot.ok { background: #0f9d58; box-shadow: 0 0 0 3px rgba(15,157,88,.18); }
+  .cloud-strip .dot.busy { background: #f59f00; box-shadow: 0 0 0 3px rgba(245,159,0,.18); animation: pulse 1.2s ease-in-out infinite; }
+  .cloud-strip .dot.err { background: #c62828; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+  .empty {
+    padding: 32px 16px; text-align: center; color: var(--text-muted);
+    font-size: 13px;
+  }
+  .empty a { color: var(--primary); font-weight: 600; text-decoration: none; }
+  .empty a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div id="mainOutlet">
+  <!-- ⚡ Quick Create — the primary action band, always at the top -->
+  <div class="qc-card">
+    <div class="qc-head">
+      <h2><span class="em">⚡</span> Quick Create</h2>
+      <span class="qc-sub">Start a new document or sync your workspace</span>
+    </div>
+    <div class="qc-grid">
+      <a class="qc-btn primary" href="invoice.html" aria-label="New Invoice">
+        <span class="em">🧾</span><span>New Invoice</span>
+      </a>
+      <a class="qc-btn primary" href="voucher.html" aria-label="New Voucher">
+        <span class="em">🎫</span><span>New Voucher</span>
+      </a>
+      <a class="qc-btn" href="ticket.html" aria-label="New Airline Ticket">
+        <span class="em">✈️</span><span>Airline Ticket</span>
+      </a>
+      <a class="qc-btn" href="ticket-invoice.html" aria-label="New Ticket Invoice">
+        <span class="em">🛫</span><span>Ticket Invoice</span>
+      </a>
+      <button class="qc-btn accent sync" id="syncAllBtn" type="button" aria-label="Sync everything with GitHub">
+        <span class="em">🔄</span><span id="syncAllLabel">Sync Everything</span>
+      </button>
+    </div>
+    <div class="qc-progress" id="syncProgress" aria-live="polite"></div>
+  </div>
+
+  <!-- Cloud & sync status -->
+  <div class="cloud-strip" id="cloudStrip">
+    <span class="cs-title">☁️ Cloud &amp; Sync Status</span>
+    <span class="cs-line" id="csGit"><span class="dot"></span><strong>GitHub</strong> <span id="csGitVal">Checking…</span></span>
+    <span class="cs-line" id="csSheet"><span class="dot"></span><strong>Google Sheets</strong> <span id="csSheetVal">Checking…</span></span>
+    <span class="cs-line" id="csLast"><strong>Last Synced:</strong> <span id="csLastVal">—</span></span>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats" id="statsGrid" role="list"></div>
+
+  <!-- Recent -->
+  <div class="section-head">
+    <h2>Recent Documents</h2>
+    <div class="head-actions">
+      <a class="btn btn-ghost btn-sm" href="documents.html">View All →</a>
+    </div>
+  </div>
+  <div id="recentList"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+AkijApp.mountShell({ title: "Dashboard", crumb: "Overview", showSearch: true, active: "dashboard" });
+const { Store, CFG, GitHub, Sheets, formatMoney, formatDate, escapeHTML, Toast, nowIso } = AkijApp;
+
+const $  = (id) => document.getElementById(id);
+
+/* -------- Stats -------- */
+function renderStats() {
+  const all = Store.all();
+  const invoices = all.filter(d => d.type === "invoice");
+  const vouchers = all.filter(d => d.type === "voucher");
+  const otherTypes = all.filter(d => !["invoice","voucher"].includes(d.type));
+  const revenue = invoices.reduce((sum, d) => sum + (Number(d.total) || 0), 0);
+
+  const cards = [
+    { icon: "📁", cls: "c1", label: "Total Documents", value: all.length,      sub: "Across all types" },
+    { icon: "🎫", cls: "c2", label: "Booking Vouchers", value: vouchers.length, sub: "Hotel & package" },
+    { icon: "🧾", cls: "c3", label: "Invoices",          value: invoices.length, sub: "All statuses" },
+    { icon: "🛫", cls: "c4", label: "Other Documents",  value: otherTypes.length, sub: "Tickets, Ticket Invoices…" },
+    { icon: "💰", cls: "c5", label: "Total Invoice Amount", value: formatMoney(revenue, "BDT"), sub: "Sum of invoice totals" }
+  ];
+  $("statsGrid").innerHTML = cards.map(c => `
+    <div class="stat" role="listitem">
+      <div class="stat-icon ${c.cls}">${c.icon}</div>
+      <div class="stat-body">
+        <div class="stat-label">${escapeHTML(c.label)}</div>
+        <div class="stat-value">${escapeHTML(String(c.value))}</div>
+        <div class="stat-sub">${escapeHTML(c.sub)}</div>
+      </div>
+    </div>`).join("");
+}
+
+/* -------- Recent -------- */
+const pageFor = (t) => ({
+  invoice: "invoice.html", voucher: "voucher.html",
+  ticket: "ticket.html", ticketInvoice: "ticket-invoice.html"
+}[t] || "documents.html");
+
+function renderRecent() {
+  const items = Store.all().sort((a,b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)).slice(0, 8);
+  const host = $("recentList");
+  if (!items.length) {
+    host.innerHTML = `<div class="recent-list"><div class="empty">No documents yet — start by creating a <a href="invoice.html">new invoice</a> or <a href="voucher.html">voucher</a>.</div></div>`;
+    return;
+  }
+  const T = CFG.DOC_TYPES || {};
+  host.innerHTML = `<div class="recent-list">${items.map(d => {
+    const label = T[d.type]?.label || d.type;
+    const icon  = T[d.type]?.icon  || "📄";
+    const name  = d.number || d.id;
+    const who   = d.clientName || d.guestName || d.passengers?.[0]?.name || "";
+    const date  = d.updatedAt || d.createdAt;
+    const amount = (d.total != null) ? formatMoney(d.total, d.currency || "BDT") : "";
+    return `<a class="recent-item" href="${pageFor(d.type)}?id=${encodeURIComponent(d.id)}" style="text-decoration:none;color:inherit;">
+      <div class="ri-icon">${icon}</div>
+      <div class="ri-info">
+        <div class="ri-name">${escapeHTML(name)}${who ? ` <span style="color:var(--text-muted);font-weight:400;">· ${escapeHTML(who)}</span>` : ""}</div>
+        <div class="ri-meta">
+          <span>${escapeHTML(label)}</span>
+          ${amount ? `<span class="amount">${escapeHTML(amount)}</span>` : ""}
+          <span>${escapeHTML(formatDate(date))}</span>
+          ${d.githubPath ? `<span class="badge badge-synced">✓ Synced</span>` : ""}
+        </div>
+      </div>
+      <span class="ri-open">Open →</span>
+    </a>`;
+  }).join("")}</div>`;
+}
+
+/* -------- Cloud status -------- */
+async function renderCloud() {
+  const gh = GitHub.isEnabled();
+  const sh = Sheets.isEnabled();
+  const gDot = $("csGit").querySelector(".dot");
+  const sDot = $("csSheet").querySelector(".dot");
+  $("csGitVal").innerHTML   = gh ? "Checking…" : `Not configured — <a href="settings.html" style="color:var(--primary);font-weight:600;">Configure now →</a>`;
+  $("csSheetVal").textContent = sh ? "Connected" : "Offline";
+  gDot.className = "dot " + (gh ? "busy" : "err");
+  sDot.className = "dot " + (sh ? "ok" : "err");
+
+  // Last sync = max syncedAt across all docs
+  const all = Store.all();
+  const ts  = all.map(d => new Date(d.syncedAt || 0).getTime()).filter(n => n > 0);
+  $("csLastVal").textContent = ts.length ? formatDate(new Date(Math.max(...ts))) : "Never";
+
+  // Live connectivity probe so users see the REAL state (401 / 404 / rate-limit / OK).
+  if (gh) {
+    try {
+      const r = await GitHub.test();
+      if (r.ok) {
+        $("csGitVal").textContent = "Connected — " + (r.repo || "OK");
+        gDot.className = "dot ok";
+      } else {
+        $("csGitVal").textContent = "Error — " + (r.error || "unknown");
+        gDot.className = "dot err";
+      }
+    } catch (e) {
+      $("csGitVal").textContent = "Error — " + (e.message || "network");
+      gDot.className = "dot err";
+    }
+  }
+}
+
+/* -------- Sync Everything -------- */
+async function syncAll(opts) {
+  opts = opts || {};
+  if (!GitHub.isEnabled()) { if (!opts.silent) Toast.show("GitHub is not configured", "warn"); return; }
+  const btn = $("syncAllBtn"), lbl = $("syncAllLabel"), prog = $("syncProgress");
+  btn.classList.add("busy"); btn.disabled = true;
+  const set = (t, done, total) => {
+    lbl.textContent = t;
+    const pct = (total > 0) ? Math.round((done / total) * 100) : 0;
+    prog.innerHTML = `<span>${escapeHTML(t)} ${total ? `— ${done}/${total} (${pct}%)` : ""}</span><div class="bar"><span style="width:${pct}%"></span></div>`;
+    const gDot = $("csGit").querySelector(".dot");
+    gDot.className = "dot busy";
+    $("csGitVal").textContent = t;
+  };
+
+  try {
+    // 1) Pre-flight: verify auth + repo reachable so a broken token surfaces immediately.
+    set("Testing connection…", 0, 0);
+    const probe = await GitHub.test();
+    if (!probe.ok) throw new Error(probe.error || "Cannot reach GitHub");
+
+    // 2) Pull all remote docs.
+    set("Pulling from GitHub…", 0, 0);
+    const pull = await GitHub.pullAll((p) => set(`Downloading ${p.done || 0}/${p.total || 0}`, p.done || 0, p.total || 0));
+    if (!pull.ok) throw new Error(pull.error || "Pull failed");
+
+    // 3) Push local changes.
+    set("Pushing local changes…", 0, 0);
+    const push = await GitHub.pushAll((p) => set(`Uploading ${p.done || 0}/${p.total || 0}`, p.done || 0, p.total || 0));
+    if (!push.ok) throw new Error(push.error || "Push failed");
+
+    lbl.textContent = "Sync Everything";
+    prog.innerHTML = `<span style="color:var(--success);">✓ Synced — ${pull.total} remote, ${push.pushed} pushed, ${push.failed || 0} failed</span>`;
+    if (!opts.silent) Toast.show(`Cloud synced — ${pull.total} remote · ${push.pushed} pushed`, "success", 3500);
+  } catch (e) {
+    lbl.textContent = "Sync Everything";
+    prog.innerHTML = `<span style="color:var(--danger);">✗ ${escapeHTML(e.message || "Sync failed")}</span>`;
+    if (!opts.silent) Toast.show("Sync failed: " + (e.message || "unknown"), "error", 6000);
+  } finally {
+    btn.classList.remove("busy"); btn.disabled = false;
+    renderStats(); renderRecent(); renderCloud();
+  }
+}
+$("syncAllBtn").addEventListener("click", () => syncAll());
+
+/* -------- Global topbar search -------- */
+document.addEventListener("keydown", (e) => {
+  if (e.target && e.target.id === "globalSearch" && e.key === "Enter") {
+    e.preventDefault();
+    const q = (e.target.value || "").trim();
+    if (q.length >= 2) location.href = "documents.html?q=" + encodeURIComponent(q);
+  }
+});
+
+renderStats();
+renderRecent();
+renderCloud();
+
+// Background auto-sync on every dashboard load so a fresh device sees
+// everything and any newly-created docs land on GitHub without user action.
+if (GitHub.isEnabled()) {
+  setTimeout(() => { syncAll({ silent: true }); }, 400);
+  // Refresh cloud status every 60s while the dashboard is open.
+  setInterval(() => { renderCloud(); }, 60000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Airline Ticket Invoice — Akij Holidays</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  .pax-card { background: var(--surface-2); border: 1px dashed var(--border-strong); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .pax-card .pc-head { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; }
+  .pax-card .pc-title { font-size: 12px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: .04em; }
+  .pax-card .remove { background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;line-height:1; }
+  .pax-card .remove:hover { background: rgba(198,40,40,.12); color: var(--danger); }
+  .import-banner {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .import-banner select { flex: 1; min-width: 200px; max-width: 320px; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font-family: var(--font); font-size: 13px; }
+  .totals-mini { display:flex; justify-content:flex-end; margin-top: 4px; }
+  .totals-mini table { border-collapse: collapse; }
+  .totals-mini td { padding: 4px 10px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .totals-mini td.label { color: var(--text-muted); text-align: left; padding-right: 24px; }
+  .totals-mini .grand td { color: var(--primary); font-weight: 700; font-size: 14px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .totals-mini .due td { color: var(--danger); font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="mainOutlet">
+  <div class="toolbar">
+    <h1>🛫 Airline Ticket Invoice</h1>
+    <span class="status" id="statusText"><span class="dot"></span>Ready</span>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost btn-sm" id="resetBtn" type="button">🔄 New</button>
+    <button class="btn btn-ghost btn-sm" id="btnCopy"  type="button">📋 Copy Text</button>
+    <button class="btn btn-accent btn-sm" id="btnSave" type="button">💾 Save</button>
+    <button class="btn btn-primary btn-sm" id="btnPDF" type="button">📄 PDF</button>
+    <button class="btn btn-accent btn-sm"  id="btnEmail" type="button">✉️ Email PDF</button>
+    <button class="btn btn-primary btn-sm" id="btnPrint" type="button">🖨️ Print</button>
+  </div>
+
+  <div class="work-grid">
+    <form id="mainForm" onsubmit="return false;" novalidate>
+
+      <div class="import-banner" id="importBanner" style="display:none">
+        <span aria-hidden="true">📥</span>
+        <div style="flex:1;min-width:200px;">Prefill from an existing airline ticket:</div>
+        <select id="importTicket" aria-label="Choose ticket"></select>
+        <button type="button" class="btn btn-accent btn-sm" id="doImport">Import</button>
+      </div>
+
+      <div class="form-section">
+        <h3>Company Contact <span class="hint" style="font-weight:400;">(appears next to the logo)</span></h3>
+        <div class="form-row">
+          <div class="form-group" style="flex:2;"><label>Address</label><input id="headerAddress" placeholder="Cosy Nook, House 10, Road 4, Gulshan 1, Dhaka, Bangladesh"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Phone</label><input id="headerPhone" inputmode="tel" placeholder="+880 9613 500850"/></div>
+          <div class="form-group"><label>Email</label><input type="email" id="headerEmail" inputmode="email" placeholder="holidays@akijair.com"/></div>
+          <div class="form-group"><label>Website</label><input id="headerWebsite" placeholder="www.akijair.com"/></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Invoice Details</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Invoice Number <span class="req">*</span></label><input id="number" required autocomplete="off" /></div>
+          <div class="form-group"><label>Date <span class="req">*</span></label><input type="date" id="invoiceDate" required /></div>
+          <div class="form-group"><label>Currency</label><select id="currency"></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Status</label>
+            <select id="status"><option value="">— None —</option><option>Draft</option><option>Sent</option><option>Paid</option><option>Overdue</option></select>
+          </div>
+          <div class="form-group"><label>Payment Method</label>
+            <select id="paymentMethod">
+              <option>Cash</option><option>Cheque</option><option>Bank Transfer</option><option>Card</option>
+              <option>bKash</option><option>Nagad</option><option>Rocket</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Bill To</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Client Name <span class="req">*</span></label><input id="clientName" required autocomplete="name" /></div>
+          <div class="form-group"><label>Company</label><input id="clientCompany" autocomplete="organization" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Email</label><input type="email" id="clientEmail" inputmode="email" autocomplete="email" /></div>
+          <div class="form-group"><label>Phone</label><input id="clientPhone" inputmode="tel" autocomplete="tel" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Airline &amp; Reference</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Airline</label>
+            <div class="ac-wrap"><input id="airlineInput" placeholder="Type name or IATA code…" autocomplete="off" /></div>
+          </div>
+          <div class="form-group"><label>Flight Number</label><input id="flightNumber" autocomplete="off" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>PNR</label><input id="pnr" style="text-transform:uppercase" autocomplete="off" /></div>
+          <div class="form-group"><label>Ticket Number</label><input id="ticketNumber" autocomplete="off" /></div>
+          <div class="form-group"><label>Booking Reference</label><input id="bookingRef" autocomplete="off" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Flight Details</h3>
+        <div class="form-row">
+          <div class="form-group"><label>From</label>
+            <div class="ac-wrap"><input id="depInput" placeholder="Type city, IATA or ICAO…" autocomplete="off" /></div>
+          </div>
+          <div class="form-group"><label>To</label>
+            <div class="ac-wrap"><input id="arrInput" placeholder="Type city, IATA or ICAO…" autocomplete="off" /></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Depart Date</label><input type="date" id="departDate" /></div>
+          <div class="form-group"><label>Depart Time</label><input type="time" id="departTime" /></div>
+          <div class="form-group"><label>Arrive Date</label><input type="date" id="arriveDate" /></div>
+          <div class="form-group"><label>Arrive Time</label><input type="time" id="arriveTime" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Class</label><select id="class"></select></div>
+          <div class="form-group"><label>Cabin</label><select id="cabin"></select></div>
+          <div class="form-group"><label>Baggage</label><input id="baggage" autocomplete="off" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Passengers</h3>
+        <div id="paxBody"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addPaxBtn">+ Add Passenger</button>
+      </div>
+
+      <div class="form-section">
+        <h3>Fare Breakdown</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Base Fare <span class="req">*</span></label><input type="number" id="baseFare" min="0" step="0.01" value="0" required /></div>
+          <div class="form-group"><label>Taxes</label><input type="number" id="taxes" min="0" step="0.01" value="0" /></div>
+          <div class="form-group"><label>VAT Rate (%)</label><input type="number" id="vatRate" min="0" step="0.01" value="0" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Service Charge</label><input type="number" id="serviceCharge" min="0" step="0.01" value="0" /></div>
+          <div class="form-group"><label>Discount</label><input type="number" id="discount" min="0" step="0.01" value="0" /></div>
+          <div class="form-group"><label>Paid</label><input type="number" id="paid" min="0" step="0.01" value="0" /></div>
+        </div>
+        <div class="totals-mini">
+          <table>
+            <tr><td class="label">Base + Taxes</td><td id="miniSub">0.00</td></tr>
+            <tr><td class="label">VAT</td><td id="miniVat">0.00</td></tr>
+            <tr class="grand"><td>Total</td><td id="miniTotal">0.00</td></tr>
+            <tr class="due"><td>Balance Due</td><td id="miniDue">0.00</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Payment Info (Optional)</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Bank Name</label><input id="bankName" /></div>
+          <div class="form-group"><label>Account Name</label><input id="accountName" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Account Number</label><input id="accountNumber" /></div>
+          <div class="form-group"><label>Branch</label><input id="branchName" /></div>
+          <div class="form-group"><label>Routing / IFSC</label><input id="routingNumber" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Notes &amp; Terms</h3>
+        <div class="form-group"><label>Notes</label><textarea id="notes" rows="2"></textarea></div>
+        <div class="form-group"><label>Terms &amp; Conditions</label><textarea id="terms" rows="3"></textarea></div>
+      </div>
+    </form>
+
+    <div class="preview-wrap">
+      <h3>Live Preview</h3>
+      <div id="previewNode"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="aviation-data.js"></script>
+<script src="doc-renderers.js"></script>
+<script src="doc-actions.js"></script>
+<script>
+const { CFG, Store, Toast, Autocomplete, uid, nowIso, symbolFor, formatMoney, escapeHTML } = AkijApp;
+AkijApp.mountShell({ active: "ticketInvoice", title: "Airline Ticket Invoice", crumb: "Create · Ticket Invoice" });
+
+const $ = id => document.getElementById(id);
+const val = id => ($(id)?.value ?? "").trim();
+const numv = id => Number($(id)?.value) || 0;
+
+/* Currency */
+(function initCurrency() {
+  const sel = $("currency");
+  (CFG.CURRENCIES || [{code:"BDT",symbol:"৳"}]).forEach(c => {
+    const o = document.createElement("option");
+    o.value = c.code; o.textContent = `${c.code} (${c.symbol})`; sel.appendChild(o);
+  });
+})();
+(function () {
+  const AV = window.Aviation || { CLASSES: [], CABINS: [] };
+  $("class").innerHTML = `<option value=""></option>` + AV.CLASSES.map(c => `<option>${escapeHTML(c)}</option>`).join("");
+  $("cabin").innerHTML = `<option value=""></option>` + AV.CABINS.map(c => `<option>${escapeHTML(c)}</option>`).join("");
+})();
+
+let currentId = null;
+let selectedAirline = null;
+let departure = null;
+let arrival = null;
+let passengers = [{ name: "", type: "ADT", ticketNumber: "" }];
+
+Autocomplete.attach($("airlineInput"), {
+  source: (q) => window.Aviation?.searchAirlines(q) || [],
+  renderItem: (a) => ({ code: a.iata, title: a.name, sub: `${a.icao} · ${a.country}` }),
+  toDisplay: (a) => `${a.iata} — ${a.name}`,
+  onSelect: (a) => { selectedAirline = a; updatePreview(); }
+});
+function airportAC(id, setter) {
+  Autocomplete.attach($(id), {
+    source: (q) => window.Aviation?.searchAirports(q) || [],
+    renderItem: (a) => ({ code: a.iata, title: `${a.city}, ${a.country}`, sub: `${a.name} · ${a.icao}` }),
+    toDisplay: (a) => `${a.iata} — ${a.city}`,
+    onSelect: (a) => { setter(a); updatePreview(); }
+  });
+}
+airportAC("depInput", (a) => departure = a);
+airportAC("arrInput", (a) => arrival = a);
+
+function renderPax() {
+  const body = $("paxBody");
+  body.innerHTML = passengers.map((p, i) => `
+    <div class="pax-card" data-i="${i}">
+      <div class="pc-head">
+        <div class="pc-title">Passenger #${i + 1}</div>
+        <button type="button" class="remove" aria-label="Remove passenger" title="Remove passenger">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Full Name</label><input data-k="name" value="${escapeHTML(p.name || "")}"/></div>
+        <div class="form-group"><label>Type</label>
+          <select data-k="type">
+            <option value="ADT" ${p.type === "ADT" ? "selected" : ""}>Adult (ADT)</option>
+            <option value="CHD" ${p.type === "CHD" ? "selected" : ""}>Child (CHD)</option>
+            <option value="INF" ${p.type === "INF" ? "selected" : ""}>Infant (INF)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Ticket Number</label><input data-k="ticketNumber" value="${escapeHTML(p.ticketNumber || "")}"/></div>
+      </div>
+    </div>`).join("");
+  body.querySelectorAll(".pax-card").forEach(card => {
+    const i = Number(card.dataset.i);
+    card.querySelectorAll("[data-k]").forEach(el => {
+      el.addEventListener("input",  (e) => { passengers[i][e.target.dataset.k] = e.target.value; updatePreview(); });
+      el.addEventListener("change", (e) => { passengers[i][e.target.dataset.k] = e.target.value; updatePreview(); });
+    });
+    card.querySelector(".remove").addEventListener("click", () => {
+      if (passengers.length <= 1) { passengers = [{ name: "", type: "ADT", ticketNumber: "" }]; }
+      else { passengers.splice(i, 1); }
+      renderPax(); updatePreview();
+    });
+  });
+}
+
+function computeTotals() {
+  const base = numv("baseFare");
+  const tax  = numv("taxes");
+  const svc  = numv("serviceCharge");
+  const disc = numv("discount");
+  const vatRate = numv("vatRate");
+  const beforeVat = Math.max(0, base + tax + svc - disc);
+  const vat = +(beforeVat * vatRate / 100).toFixed(2);
+  const total = +(beforeVat + vat).toFixed(2);
+  const paid = numv("paid");
+  const due = Math.max(0, total - paid);
+  return { base, tax, svc, disc, vatRate, vat, total, paid, due };
+}
+function updateMini() {
+  const cur = val("currency") || "BDT";
+  const t = computeTotals();
+  $("miniSub").textContent   = formatMoney(t.base + t.tax + t.svc - t.disc, cur);
+  $("miniVat").textContent   = formatMoney(t.vat, cur);
+  $("miniTotal").textContent = formatMoney(t.total, cur);
+  $("miniDue").textContent   = formatMoney(t.due, cur);
+}
+
+function buildDoc() {
+  const cur = val("currency") || "BDT";
+  const t = computeTotals();
+  return {
+    id: currentId || uid("ticketInvoice"),
+    type: "ticketInvoice",
+    number: val("number"),
+    invoiceDate: val("invoiceDate"),
+    headerAddress: val("headerAddress"),
+    headerPhone:   val("headerPhone"),
+    headerEmail:   val("headerEmail"),
+    headerWebsite: val("headerWebsite"),
+    currency: cur, status: val("status"), paymentMethod: val("paymentMethod"),
+    clientName: val("clientName"), clientCompany: val("clientCompany"),
+    clientEmail: val("clientEmail"), clientPhone: val("clientPhone"),
+    airline: selectedAirline || undefined, flightNumber: val("flightNumber"),
+    pnr: val("pnr").toUpperCase(), ticketNumber: val("ticketNumber"), bookingRef: val("bookingRef"),
+    departure: departure || undefined, arrival: arrival || undefined,
+    departDate: val("departDate"), departTime: val("departTime"),
+    arriveDate: val("arriveDate"), arriveTime: val("arriveTime"),
+    class: val("class"), cabin: val("cabin"), baggage: val("baggage"),
+    passengers: passengers.filter(p => (p.name || "").trim()).map(p => ({ ...p })),
+    baseFare: t.base, taxes: t.tax, serviceCharge: t.svc, discount: t.disc,
+    vatRate: t.vatRate, vat: t.vat, total: t.total, paid: t.paid, due: t.due,
+    bankName: val("bankName"), accountName: val("accountName"),
+    accountNumber: val("accountNumber"), branchName: val("branchName"),
+    routingNumber: val("routingNumber"),
+    notes: val("notes"), terms: val("terms"),
+    createdAt: currentId ? (Store.get(currentId)?.createdAt || nowIso()) : nowIso(),
+    updatedAt: nowIso()
+  };
+}
+function validate() {
+  if (!val("number"))      return "Invoice number is required";
+  if (!val("invoiceDate")) return "Invoice date is required";
+  if (!val("clientName"))  return "Client name is required";
+  if (numv("baseFare") <= 0) return "Base fare must be greater than zero";
+  return null;
+}
+
+const updatePreview = DocActions.makeDebouncedPreview($("previewNode"), buildDoc, 90);
+function setStatus(t, kind) {
+  const s = $("statusText");
+  s.className = "status" + (kind === "working" ? " working" : kind === "error" ? " error" : "");
+  s.innerHTML = `<span class="dot"></span>${escapeHTML(t)}`;
+}
+
+function prefill() {
+  const bank = CFG.BANK || {}, co = CFG.COMPANY || {};
+  $("number").value = Store.nextNumber("ticketInvoice");
+  $("invoiceDate").value = new Date().toISOString().split("T")[0];
+  if ($("headerAddress")) $("headerAddress").value = co.address || "";
+  if ($("headerPhone"))   $("headerPhone").value   = co.phone   || "";
+  if ($("headerEmail"))   $("headerEmail").value   = co.email   || "";
+  if ($("headerWebsite")) $("headerWebsite").value = co.website || "";
+  if ($("bankName"))      $("bankName").value      = bank.name    || "";
+  if ($("accountName"))   $("accountName").value   = bank.account || "";
+  if ($("accountNumber")) $("accountNumber").value = bank.number  || "";
+  if ($("branchName"))    $("branchName").value    = bank.branch  || "";
+  if ($("routingNumber")) $("routingNumber").value = bank.routing || "";
+}
+function loadFrom(d) {
+  currentId = d.id;
+  ["number","invoiceDate","currency","status","paymentMethod",
+   "headerAddress","headerPhone","headerEmail","headerWebsite",
+   "clientName","clientCompany","clientEmail","clientPhone",
+   "flightNumber","pnr","ticketNumber","bookingRef",
+   "departDate","departTime","arriveDate","arriveTime",
+   "class","cabin","baggage",
+   "bankName","accountName","accountNumber","branchName","routingNumber",
+   "notes","terms"].forEach(k => { if ($(k)) $(k).value = d[k] || ""; });
+  ["baseFare","taxes","serviceCharge","discount","vatRate","paid"].forEach(k => { if ($(k)) $(k).value = d[k] ?? 0; });
+  if (d.airline) { selectedAirline = d.airline; $("airlineInput").value = `${d.airline.iata || ""} — ${d.airline.name || ""}`.replace(/^—\s+/,""); }
+  if (d.departure) { departure = d.departure; $("depInput").value = `${d.departure.iata} — ${d.departure.city}`; }
+  if (d.arrival)   { arrival   = d.arrival;   $("arrInput").value = `${d.arrival.iata} — ${d.arrival.city}`; }
+  passengers = Array.isArray(d.passengers) && d.passengers.length ? d.passengers.map(p => ({ ...p })) : [{ name: "", type: "ADT", ticketNumber: "" }];
+  renderPax(); updateMini();
+  setStatus(`Editing ${d.number}`);
+}
+
+/* Prefill-from-ticket importer */
+function populateTicketImport() {
+  const tickets = Store.byType("ticket").sort((a,b) => new Date(b.updatedAt||0) - new Date(a.updatedAt||0));
+  if (!tickets.length) return;
+  $("importBanner").style.display = "flex";
+  const sel = $("importTicket");
+  sel.innerHTML = `<option value="">Select a ticket…</option>` +
+    tickets.slice(0, 100).map(t => `<option value="${escapeHTML(t.id)}">${escapeHTML(t.number || t.pnr || t.id)} — ${escapeHTML((t.passengers?.[0]?.name) || "")} — ${escapeHTML(t.airline?.iata || "")}${escapeHTML(t.flightNumber || "")}</option>`).join("");
+  $("doImport").addEventListener("click", () => {
+    const tid = sel.value; if (!tid) return;
+    const t = Store.get(tid); if (!t) return;
+    if (t.airline)      { selectedAirline = t.airline; $("airlineInput").value = `${t.airline.iata || ""} — ${t.airline.name || ""}`.replace(/^—\s+/,""); }
+    if (t.departure)    { departure = t.departure; $("depInput").value = `${t.departure.iata} — ${t.departure.city}`; }
+    if (t.arrival)      { arrival   = t.arrival;   $("arrInput").value = `${t.arrival.iata} — ${t.arrival.city}`; }
+    ["flightNumber","pnr","ticketNumber","bookingRef","departDate","departTime","arriveDate","arriveTime","class","cabin","baggage"].forEach(k => { if ($(k) && t[k] != null) $(k).value = t[k]; });
+    passengers = Array.isArray(t.passengers) && t.passengers.length
+      ? t.passengers.map(p => ({ name: p.name || "", type: p.type || "ADT", ticketNumber: p.ticketNumber || t.ticketNumber || "" }))
+      : [{ name: "", type: "ADT", ticketNumber: "" }];
+    renderPax(); updatePreview();
+    Toast.show("Imported from ticket", "success");
+  });
+}
+
+document.querySelectorAll("#mainForm input, #mainForm textarea, #mainForm select").forEach(el => {
+  el.addEventListener("input",  () => { updateMini(); updatePreview(); });
+  el.addEventListener("change", () => { updateMini(); updatePreview(); });
+});
+$("addPaxBtn").addEventListener("click", () => {
+  passengers.push({ name: "", type: "ADT", ticketNumber: "" });
+  renderPax(); updatePreview();
+});
+$("resetBtn").addEventListener("click", () => {
+  if (!currentId || confirm("Start new ticket invoice? Unsaved changes will be lost.")) location.href = "ticket-invoice.html";
+});
+
+DocActions.attach({
+  btnSave: $("btnSave"), btnPrint: $("btnPrint"), btnPDF: $("btnPDF"), btnCopy: $("btnCopy"), btnEmail: $("btnEmail"),
+  getDoc: buildDoc, validate,
+  onSaved: (d) => { currentId = d.id; updatePreview(); },
+  setStatus
+});
+
+const id = new URLSearchParams(location.search).get("id");
+if (id) {
+  const d = Store.get(id);
+  if (d) loadFrom(d);
+  else { prefill(); Toast.show("Not found — starting new", "warn"); }
+} else {
+  prefill();
+}
+populateTicketImport();
+renderPax();
+updateMini();
+updatePreview();
+</script>
+</body>
+</html>

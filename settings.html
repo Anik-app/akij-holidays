@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — Akij Holidays</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* (same styles as before) */
+  .settings-grid { display: grid; grid-template-columns: 1fr; gap: 22px; max-width: 900px; }
+  .setting-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow-xs);
+  }
+  .setting-card h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .setting-card .sub { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
+  .setting-card .help {
+    background: var(--info-soft);
+    border-left: 3px solid var(--info);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: var(--text);
+    margin: 8px 0 14px;
+    line-height: 1.6;
+  }
+  .setting-card .help a { color: var(--accent); font-weight: 600; }
+  .status-line {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; margin: 6px 0 14px;
+    border: 1px solid var(--border); border-radius: 10px;
+    font-size: 13px;
+  }
+  .status-line .dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e0; }
+  .status-line .dot.ok { background: #0f9d58; box-shadow: 0 0 0 3px rgba(15,157,88,.18); }
+  .status-line .dot.err { background: #c62828; box-shadow: 0 0 0 3px rgba(198,40,40,.18); }
+  .status-line .dot.busy { background: #f59f00; animation: pulse 1.2s ease-in-out infinite; }
+  .status-line strong { color: var(--text); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  .fld { display: block; margin-bottom: 12px; }
+  .fld label { display: block; font-size: 12.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .fld input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13.5px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .fld input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-ring); }
+  .fld.mono input { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .actions .btn { min-width: 130px; }
+  .kv { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: var(--text-muted); font-weight: 600; }
+  .kv .v { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--text); word-break: break-all; text-align: right; }
+  .danger-card { border-color: rgba(198,40,40,.35); }
+  .danger-card h2 { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div id="mainOutlet">
+  <div class="toolbar">
+    <h1>⚙️ Settings</h1>
+    <span class="status" id="statusText"><span class="dot"></span>Ready</span>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="settings-grid">
+
+    <!-- GitHub Cloud Storage -->
+    <div class="setting-card">
+      <h2>☁️ GitHub Cloud Storage</h2>
+      <div class="sub">Configure once. Every document you save is automatically pushed to the GitHub repository, and every time you open the app your documents sync back. Credentials are stored in this browser only.</div>
+
+      <div class="status-line" id="ghStatus"><span class="dot"></span><span id="ghStatusText">Checking…</span></div>
+
+      <div class="help">
+        <strong>How to set up:</strong>
+        <ol style="margin:6px 0 0 20px; padding:0;">
+          <li>Create a repository (e.g. <code>akij-holidays</code>) on GitHub.</li>
+          <li>Generate a fine-grained personal access token at
+            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>
+            with access limited to that repo and <em>Contents: Read and write</em>.</li>
+          <li>Paste the values below and click <strong>Save &amp; Test</strong>.</li>
+        </ol>
+        <p style="margin-top:8px; color:var(--danger); font-weight:500;">🔒 For security, the token is <strong>not</strong> hardcoded. Paste it once; it will be stored safely in your browser.</p>
+      </div>
+
+      <div class="fld"><label for="ghOwner">Owner (user or organization)</label><input id="ghOwner" value="Anik-app" placeholder="e.g., Anik-app" autocomplete="off"/></div>
+      <div class="fld"><label for="ghRepo">Repository name</label><input id="ghRepo" value="akij-holidays" placeholder="e.g., akij-holidays" autocomplete="off"/></div>
+      <div class="fld"><label for="ghBranch">Branch</label><input id="ghBranch" value="main" placeholder="main" autocomplete="off"/></div>
+      <div class="fld"><label for="ghBase">Base folder</label><input id="ghBase" value="Documents" placeholder="Documents" autocomplete="off"/></div>
+      <div class="fld mono"><label for="ghToken">Personal access token</label><input id="ghToken" type="password" placeholder="Paste your token here" autocomplete="off"/></div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="ghSaveBtn" type="button">💾 Save &amp; Test</button>
+        <button class="btn btn-ghost"  id="ghClearBtn" type="button">Clear</button>
+      </div>
+    </div>
+
+    <!-- Google Sheets Logger -->
+    <div class="setting-card">
+      <h2>📊 Google Sheets Logger</h2>
+      <div class="sub">Optional. When enabled, every save is also appended as a row to your Google Sheet via a Google Apps Script Web App.</div>
+      <div class="status-line" id="gsStatus"><span class="dot"></span><span id="gsStatusText">Checking…</span></div>
+      <div class="help">
+        Paste the deployed Web App URL from Google Apps Script (must end in <code>/exec</code>).
+        Target sheet: <a id="gsSheetUrl" href="#" target="_blank" rel="noopener">open Google Sheet</a>.
+      </div>
+      <div class="fld mono"><label for="gsUrl">Apps Script Web App URL</label><input id="gsUrl" placeholder="https://script.google.com/macros/s/…/exec"/></div>
+      <div class="actions">
+        <button class="btn btn-primary" id="gsSaveBtn" type="button">💾 Save URL</button>
+        <button class="btn btn-ghost"  id="gsClearBtn" type="button">Clear</button>
+      </div>
+    </div>
+
+    <!-- Current company defaults (read-only preview) -->
+    <div class="setting-card">
+      <h2>🏢 Company Defaults</h2>
+      <div class="sub">These prefill the Company Contact fields on each maker. Change them in <code>config.js</code>.</div>
+      <div id="coBlock"></div>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="setting-card danger-card">
+      <h2>⚠️ Danger Zone</h2>
+      <div class="sub">These actions affect only this browser. Cloud copies on GitHub are not touched.</div>
+      <div class="actions">
+        <button class="btn btn-ghost" id="wipeLocal" type="button">Clear local documents</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+AkijApp.mountShell({ active: "settings", title: "Settings", crumb: "Cloud & Configuration" });
+const { CFG, GitHub, Sheets, Store, Toast, safeLocalStorage } = AkijApp;
+const $ = id => document.getElementById(id);
+
+function setStatus(t, kind) {
+  const s = $("statusText");
+  s.className = "status" + (kind === "working" ? " working" : kind === "error" ? " error" : "");
+  s.innerHTML = `<span class="dot"></span>${t}`;
+}
+
+/* ========== GitHub ========== */
+function loadGitHubForm() {
+  const c = GitHub.creds() || {};
+  $("ghOwner").value  = c.owner    || "Anik-app";
+  $("ghRepo").value   = c.repo     || "akij-holidays";
+  $("ghBranch").value = c.branch   || "main";
+  $("ghBase").value   = c.basePath || "Documents";
+  // Token: if stored, mask it; otherwise leave empty
+  if (c.token) {
+    $("ghToken").value = "••••••••••••••••••••••••";
+    $("ghToken").dataset.mask = c.token;
+  } else {
+    $("ghToken").value = "";
+    delete $("ghToken").dataset.mask;
+  }
+  refreshGithubStatus();
+}
+
+async function refreshGithubStatus() {
+  const dot = $("ghStatus").querySelector(".dot"), txt = $("ghStatusText");
+  if (!GitHub.isEnabled()) { dot.className = "dot err"; txt.textContent = "Not configured yet"; return; }
+  dot.className = "dot busy"; txt.textContent = "Testing…";
+  const r = await GitHub.test();
+  if (r.ok) { dot.className = "dot ok"; txt.innerHTML = `Connected — <strong>${r.repo || "OK"}</strong>${r.private ? " (private)" : ""}`; }
+  else       { dot.className = "dot err"; txt.textContent = "Error — " + (r.error || "unknown"); }
+}
+
+$("ghSaveBtn").addEventListener("click", async () => {
+  const maskedShown = $("ghToken").value.startsWith("•");
+  const token = maskedShown ? ($("ghToken").dataset.mask || "") : $("ghToken").value.trim();
+  const creds = {
+    owner:    $("ghOwner").value.trim(),
+    repo:     $("ghRepo").value.trim(),
+    branch:   $("ghBranch").value.trim() || "main",
+    basePath: $("ghBase").value.trim()   || "Documents",
+    token
+  };
+  if (!creds.owner || !creds.repo || !creds.token) { Toast.show("Owner, repo, and token are all required", "error"); return; }
+  setStatus("Testing GitHub…", "working");
+  const dot = $("ghStatus").querySelector(".dot"), txt = $("ghStatusText");
+  dot.className = "dot busy"; txt.textContent = "Testing new credentials…";
+  const probe = await GitHub.test(creds);
+  if (!probe.ok) {
+    dot.className = "dot err"; txt.textContent = "Error — " + (probe.error || "unknown");
+    setStatus("Save failed", "error");
+    Toast.show("GitHub check failed: " + (probe.error || "unknown"), "error", 6000);
+    return;
+  }
+  try { GitHub.save(creds); }
+  catch (e) { Toast.show("Save failed: " + e.message, "error"); return; }
+  dot.className = "dot ok"; txt.innerHTML = `Connected — <strong>${probe.repo}</strong>`;
+  $("ghToken").value = "••••••••••••••••••••••••"; $("ghToken").dataset.mask = creds.token;
+  setStatus("Saved", "ok");
+  Toast.show("GitHub connected & credentials saved", "success", 3500);
+});
+
+$("ghClearBtn").addEventListener("click", () => {
+  if (!confirm("Clear GitHub credentials from this browser? Cloud sync will stop.")) return;
+  GitHub.clear();
+  ["ghOwner","ghRepo","ghBranch","ghBase","ghToken"].forEach(id => $(id).value = "");
+  $("ghToken").dataset.mask = "";
+  refreshGithubStatus();
+  Toast.show("Credentials cleared", "success");
+});
+
+/* ========== Google Sheets ========== */
+function loadSheetsForm() {
+  const url = safeLocalStorage.get("akij.sheets.url") || (CFG.APPS_SCRIPT_URL || "");
+  $("gsUrl").value = url;
+  $("gsSheetUrl").href = CFG.SHEET_URL || "#";
+  refreshSheetsStatus();
+}
+
+function refreshSheetsStatus() {
+  const dot = $("gsStatus").querySelector(".dot"), txt = $("gsStatusText");
+  const url = $("gsUrl").value.trim() || CFG.APPS_SCRIPT_URL || "";
+  if (/^https:\/\/script\.google\.com\/.*\/exec/.test(url)) {
+    dot.className = "dot ok"; txt.textContent = "Logger URL saved";
+  } else if (url) {
+    dot.className = "dot err"; txt.textContent = "URL does not look like a deployed Web App /exec URL";
+  } else {
+    dot.className = "dot"; txt.textContent = "Not configured";
+  }
+}
+
+$("gsSaveBtn").addEventListener("click", () => {
+  const url = $("gsUrl").value.trim();
+  if (!/^https:\/\/script\.google\.com\/.*\/exec/.test(url)) {
+    Toast.show("That doesn't look like a valid /exec URL", "error"); return;
+  }
+  safeLocalStorage.set("akij.sheets.url", url);
+  window.APP_CONFIG.APPS_SCRIPT_URL = url;
+  refreshSheetsStatus();
+  Toast.show("Sheets logger saved", "success");
+});
+$("gsClearBtn").addEventListener("click", () => {
+  safeLocalStorage.remove("akij.sheets.url");
+  $("gsUrl").value = "";
+  window.APP_CONFIG.APPS_SCRIPT_URL = "";
+  refreshSheetsStatus();
+  Toast.show("Sheets logger cleared", "success");
+});
+
+/* ========== Company ========== */
+(function renderCompany() {
+  const co = CFG.COMPANY || {}, bk = CFG.BANK || {};
+  const rows = [
+    ["Company",      co.name],
+    ["Legal Name",   co.legalName],
+    ["Address",      co.address],
+    ["Phone",        co.phone],
+    ["Email",        co.email],
+    ["Website",      co.website],
+    ["Bank",         bk.name && `${bk.name} · A/C ${bk.number || ""}`],
+  ].filter(r => r[1]);
+  $("coBlock").innerHTML = rows.map(r => `<div class="kv"><span class="k">${r[0]}</span><span class="v">${AkijApp.escapeHTML(String(r[1]))}</span></div>`).join("");
+})();
+
+/* ========== Danger zone ========== */
+$("wipeLocal").addEventListener("click", () => {
+  if (!confirm("Delete ALL local documents from this browser? Cloud copies on GitHub remain.")) return;
+  Store.clear();
+  Toast.show("Cleared local documents", "success");
+});
+
+loadGitHubForm();
+loadSheetsForm();
+</script>
+</body>
+</html>

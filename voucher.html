@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Voucher Maker — Akij Holidays</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  .hotels-list .hotel-card-ed {
+    background: linear-gradient(135deg, #fdf2f4 0%, var(--surface) 100%);
+    border: 1px solid rgba(142, 1, 26, .22);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+    transition: box-shadow .18s, transform .18s;
+  }
+  .hotels-list .hotel-card-ed:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+  .hotels-list .hotel-card-ed .hc-head-ed {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(142, 1, 26, .18);
+  }
+  .hotels-list .hotel-card-ed .hc-title-ed {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .hotels-list .hotel-card-ed .hc-num {
+    background: var(--primary);
+    color: #fff;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+  .hotels-list .remove-hotel {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: background-color .15s, color .15s;
+  }
+  .hotels-list .remove-hotel:hover { background: rgba(198,40,40,.12); color: var(--danger); }
+  .stars-input-wrap { display: flex; align-items: center; gap: 4px; }
+  .stars-input-wrap .star-btn {
+    background: transparent;
+    border: none;
+    color: #ddd;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    transition: transform .12s, color .12s;
+  }
+  .stars-input-wrap .star-btn:hover { transform: scale(1.15); }
+  .stars-input-wrap .star-btn.active { color: #f59f00; }
+  .nights-hint {
+    display: inline-block;
+    background: var(--info-soft);
+    color: var(--info);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="mainOutlet">
+  <div class="toolbar">
+    <h1>🎫 Voucher Maker</h1>
+    <span class="status" id="statusText"><span class="dot"></span>Ready</span>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost btn-sm" id="resetBtn" type="button">🔄 New</button>
+    <button class="btn btn-ghost btn-sm" id="btnCopy"  type="button">📋 Copy Text</button>
+    <button class="btn btn-accent btn-sm" id="btnSave" type="button">💾 Save</button>
+    <button class="btn btn-primary btn-sm" id="btnPDF" type="button">📄 PDF</button>
+    <button class="btn btn-accent btn-sm"  id="btnEmail" type="button">✉️ Email PDF</button>
+    <button class="btn btn-primary btn-sm" id="btnPrint" type="button">🖨️ Print</button>
+  </div>
+
+  <div class="work-grid">
+    <form id="mainForm" onsubmit="return false;" novalidate>
+
+      <div class="form-section">
+        <h3>Company Contact <span class="hint" style="font-weight:400;">(appears next to the logo)</span></h3>
+        <div class="form-row">
+          <div class="form-group" style="flex:2;"><label>Address</label><input id="headerAddress" placeholder="Cosy Nook, House 10, Road 4, Gulshan 1, Dhaka, Bangladesh"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Phone</label><input id="headerPhone" inputmode="tel" placeholder="+880 9613 500850"/></div>
+          <div class="form-group"><label>Email</label><input type="email" id="headerEmail" inputmode="email" placeholder="holidays@akijair.com"/></div>
+          <div class="form-group"><label>Website</label><input id="headerWebsite" placeholder="www.akijair.com"/></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Booking Details</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Booking ID <span class="req">*</span></label><input id="number" required autocomplete="off" /></div>
+          <div class="form-group"><label>Booking Date</label><input type="date" id="bookingDate" /></div>
+          <div class="form-group"><label>Service <span class="hint">(shown once, top-right)</span></label>
+            <select id="service">
+              <option value="">Select…</option>
+              <option>Hotel</option><option>Package</option><option>Transfer</option>
+              <option>Flight</option><option>Tour</option><option>Umrah</option><option>Others</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Status</label>
+            <select id="bookingStatus">
+              <option value="">— None —</option>
+              <option>Confirmed</option><option>Pending</option><option>Cancelled</option><option>On Hold</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Check-in hint</label><input id="checkInHint" placeholder="From 15:00"/></div>
+          <div class="form-group"><label>Check-out hint</label><input id="checkOutHint" placeholder="By 12:00"/></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Lead Guest</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Guest Full Name <span class="req">*</span></label><input id="guestName" required autocomplete="name" /></div>
+          <div class="form-group"><label>Phone</label><input id="guestPhone" inputmode="tel" autocomplete="tel" /></div>
+          <div class="form-group"><label>Email</label><input type="email" id="guestEmail" inputmode="email" autocomplete="email" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Adults</label><input type="number" id="adults" min="0" step="1" value="1" /></div>
+          <div class="form-group"><label>Children</label><input type="number" id="children" min="0" step="1" value="0" /></div>
+          <div class="form-group"><label>Infants</label><input type="number" id="infants" min="0" step="1" value="0" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Additional Guests <span class="hint" style="font-weight:400;">(optional — Guest 2, Guest 3…)</span></h3>
+        <div id="addGuestsBody"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addGuestBtn">+ Add Guest</button>
+      </div>
+
+      <div class="form-section">
+        <h3>Stay Details</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Check-in <span class="req">*</span></label><input type="date" id="arrival" required /></div>
+          <div class="form-group"><label>Check-out <span class="req">*</span></label><input type="date" id="departure" required /></div>
+          <div class="form-group">
+            <label>Nights</label>
+            <input id="nights" readonly tabindex="-1" />
+            <div class="hint" id="nightsHint" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Total Rooms</label><input type="number" id="rooms" min="0" step="1" value="1" /></div>
+          <div class="form-group"><label>Room Category</label><input id="roomCategory" placeholder="e.g., Deluxe / Suite / Twin" /></div>
+          <div class="form-group"><label>Meal Plan / Inclusions</label>
+            <select id="mealPlan">
+              <option value="">Select…</option>
+              <option>Room Only</option>
+              <option>Bed &amp; Breakfast (BB)</option>
+              <option>Breakfast Only (CP)</option>
+              <option>Half Board (MAP)</option>
+              <option>Full Board (AP)</option>
+              <option>All Inclusive (AI)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Hotels</h3>
+        <div class="hotels-list" id="hotelsBody"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addHotelBtn">+ Add Hotel</button>
+      </div>
+
+      <div class="form-section">
+        <h3>Notes &amp; Terms</h3>
+        <div class="form-group"><label>Special Note</label><textarea id="note" rows="2"></textarea></div>
+        <div class="form-group"><label>Terms &amp; Conditions</label><textarea id="terms" rows="3" placeholder="• Check-in from 14:00, check-out by 12:00.&#10;• Government-issued ID required at check-in.&#10;• Cancellation policy per hotel."></textarea></div>
+      </div>
+    </form>
+
+    <div class="preview-wrap">
+      <h3>Live Preview</h3>
+      <div id="previewNode"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="doc-renderers.js"></script>
+<script src="doc-actions.js"></script>
+<script>
+const { CFG, Store, Toast, uid, nowIso, escapeHTML } = AkijApp;
+AkijApp.mountShell({ active: "voucher", title: "Voucher Maker", crumb: "Create · Voucher" });
+
+const $ = id => document.getElementById(id);
+const val = id => ($(id)?.value ?? "").trim();
+let currentId = null;
+let hotels = [emptyHotel()];
+let additionalGuests = []; // list of names for Guest 2, Guest 3…
+
+function emptyHotel() {
+  return { name: "", city: "", country: "", address: "", stars: 0,
+           confirmation: "", rooms: "", roomType: "", mealPlan: "",
+           checkIn: "", checkOut: "", phone: "" };
+}
+
+function renderAddGuests() {
+  const host = $("addGuestsBody");
+  if (!host) return;
+  host.innerHTML = additionalGuests.map((name, i) => `
+    <div class="form-row" data-i="${i}" style="align-items:end;">
+      <div class="form-group" style="flex:1;">
+        <label>Guest ${i + 2} Name</label>
+        <input data-guest-name value="${escapeHTML(name || "")}" placeholder="Full name"/>
+      </div>
+      <div class="form-group" style="flex:0 0 auto;">
+        <button type="button" class="btn btn-ghost btn-sm" data-guest-remove aria-label="Remove guest">✕</button>
+      </div>
+    </div>`).join("");
+  host.querySelectorAll("[data-guest-name]").forEach(el => {
+    el.addEventListener("input", (e) => {
+      const i = Number(e.target.closest(".form-row").dataset.i);
+      additionalGuests[i] = e.target.value;
+      updatePreview();
+    });
+  });
+  host.querySelectorAll("[data-guest-remove]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const i = Number(e.target.closest(".form-row").dataset.i);
+      additionalGuests.splice(i, 1);
+      renderAddGuests();
+      updatePreview();
+    });
+  });
+}
+
+function computeNights() {
+  const a = val("arrival"), d = val("departure");
+  if (!a || !d) return 0;
+  const t1 = new Date(a).getTime(), t2 = new Date(d).getTime();
+  if (!isFinite(t1) || !isFinite(t2) || t2 <= t1) return 0;
+  return Math.round((t2 - t1) / 86400000);
+}
+function refreshNights() {
+  const n = computeNights();
+  $("nights").value = n > 0 ? n : "";
+  const hint = $("nightsHint");
+  if (n === 0 && val("arrival") && val("departure")) {
+    hint.style.display = "block";
+    hint.className = "hint text-danger";
+    hint.textContent = "Check-out must be after check-in.";
+  } else {
+    hint.style.display = "none";
+  }
+}
+
+function renderStarsInput(i, stars) {
+  return `<div class="stars-input-wrap" data-stars-for="${i}">
+    ${[1,2,3,4,5].map(n => `<button type="button" class="star-btn ${n <= stars ? "active" : ""}" data-star="${n}" aria-label="Set ${n} star${n===1?"":"s"}">★</button>`).join("")}
+    <input type="hidden" data-k="stars" value="${stars || 0}">
+  </div>`;
+}
+
+function renderHotels() {
+  const body = $("hotelsBody");
+  body.innerHTML = hotels.map((h, i) => `
+    <div class="hotel-card-ed" data-i="${i}">
+      <div class="hc-head-ed">
+        <div class="hc-title-ed"><span class="hc-num">${i + 1}</span> Hotel</div>
+        <button type="button" class="remove-hotel" aria-label="Remove hotel" title="Remove hotel">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column: span 2;"><label>Hotel Name <span class="req">*</span></label><input data-k="name" value="${escapeHTML(h.name || "")}" placeholder="e.g., Sea Pearl Beach Resort"/></div>
+        <div class="form-group">
+          <label>Star Rating</label>
+          ${renderStarsInput(i, Number(h.stars) || 0)}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>City</label><input data-k="city" value="${escapeHTML(h.city || "")}" placeholder="e.g., Cox's Bazar"/></div>
+        <div class="form-group"><label>Country</label><input data-k="country" value="${escapeHTML(h.country || "")}" placeholder="e.g., Bangladesh"/></div>
+        <div class="form-group"><label>Phone</label><input data-k="phone" value="${escapeHTML(h.phone || "")}" inputmode="tel"/></div>
+      </div>
+      <div class="form-group"><label>Full Address</label><input data-k="address" value="${escapeHTML(h.address || "")}" placeholder="Street, area, postal code"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>Confirmation #</label><input data-k="confirmation" value="${escapeHTML(h.confirmation || "")}"/></div>
+        <div class="form-group"><label>Rooms</label><input data-k="rooms" value="${escapeHTML(h.rooms || "")}" placeholder="e.g., 2 rooms"/></div>
+        <div class="form-group"><label>Room Type</label><input data-k="roomType" value="${escapeHTML(h.roomType || "")}" placeholder="e.g., Deluxe Sea View"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Meal Plan</label>
+          <select data-k="mealPlan">
+            <option value=""></option>
+            ${["Room Only","Bed & Breakfast (BB)","Breakfast Only (CP)","Half Board (MAP)","Full Board (AP)","All Inclusive (AI)"].map(m => `<option ${h.mealPlan === m ? "selected" : ""}>${m}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group"><label>Check-in</label><input type="date" data-k="checkIn" value="${escapeHTML(h.checkIn || "")}"/></div>
+        <div class="form-group"><label>Check-out</label><input type="date" data-k="checkOut" value="${escapeHTML(h.checkOut || "")}"/></div>
+      </div>
+    </div>`).join("");
+
+  body.querySelectorAll(".hotel-card-ed").forEach(card => {
+    const i = Number(card.dataset.i);
+    card.querySelectorAll("[data-k]").forEach(el => {
+      el.addEventListener("input", (e) => {
+        const k = e.target.dataset.k;
+        hotels[i][k] = (k === "stars") ? Number(e.target.value) || 0 : e.target.value;
+        updatePreview();
+      });
+    });
+    card.querySelectorAll(".star-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const v = Number(btn.dataset.star);
+        // Toggle: click same rating again to clear
+        const current = Number(hotels[i].stars) || 0;
+        const next = current === v ? 0 : v;
+        hotels[i].stars = next;
+        // Update visual
+        const wrap = btn.closest(".stars-input-wrap");
+        wrap.querySelectorAll(".star-btn").forEach(b => b.classList.toggle("active", Number(b.dataset.star) <= next));
+        wrap.querySelector('[data-k="stars"]').value = next;
+        updatePreview();
+      });
+    });
+    card.querySelector(".remove-hotel").addEventListener("click", () => {
+      if (hotels.length <= 1) { hotels = [emptyHotel()]; }
+      else { hotels.splice(i, 1); }
+      renderHotels(); updatePreview();
+    });
+  });
+}
+
+function buildDoc() {
+  return {
+    id: currentId || uid("voucher"),
+    type: "voucher",
+    number: val("number"),
+    bookingDate: val("bookingDate"),
+    service: val("service"),
+    bookingStatus: val("bookingStatus"),
+    headerAddress: val("headerAddress"),
+    headerPhone:   val("headerPhone"),
+    headerEmail:   val("headerEmail"),
+    headerWebsite: val("headerWebsite"),
+    checkInHint:   val("checkInHint"),
+    checkOutHint:  val("checkOutHint"),
+    guestName: val("guestName"), guestPhone: val("guestPhone"), guestEmail: val("guestEmail"),
+    additionalGuests: additionalGuests.filter(g => (g || "").trim()),
+    adults: Number(val("adults")) || 0,
+    children: Number(val("children")) || 0,
+    infants: Number(val("infants")) || 0,
+    arrival: val("arrival"), departure: val("departure"),
+    nights: computeNights(),
+    rooms: Number(val("rooms")) || 0,
+    roomCategory: val("roomCategory"),
+    mealPlan: val("mealPlan"),
+    hotels: hotels.filter(h => (h.name || h.city || h.address || h.confirmation)),
+    note: val("note"),
+    terms: val("terms"),
+    createdAt: currentId ? (Store.get(currentId)?.createdAt || nowIso()) : nowIso(),
+    updatedAt: nowIso()
+  };
+}
+
+function validate() {
+  if (!val("number"))    return "Booking ID is required";
+  if (!val("guestName")) return "Guest name is required";
+  if (!val("arrival"))   return "Check-in date is required";
+  if (!val("departure")) return "Check-out date is required";
+  if (computeNights() === 0) return "Check-out must be after check-in";
+  return null;
+}
+
+const updatePreview = DocActions.makeDebouncedPreview($("previewNode"), buildDoc, 90);
+function setStatus(t, kind) {
+  const s = $("statusText");
+  s.className = "status" + (kind === "working" ? " working" : kind === "error" ? " error" : "");
+  s.innerHTML = `<span class="dot"></span>${escapeHTML(t)}`;
+}
+
+function prefill() {
+  const co = CFG.COMPANY || {};
+  $("number").value = Store.nextNumber("voucher");
+  const today = new Date();
+  $("bookingDate").value = today.toISOString().split("T")[0];
+  $("arrival").value = today.toISOString().split("T")[0];
+  $("departure").value = new Date(today.getTime() + 2 * 86400000).toISOString().split("T")[0];
+  $("headerAddress").value = co.address || "";
+  $("headerPhone").value   = co.phone   || "";
+  $("headerEmail").value   = co.email   || "";
+  $("headerWebsite").value = co.website || "";
+  $("checkInHint").value   = "From 15:00";
+  $("checkOutHint").value  = "By 12:00";
+  refreshNights();
+}
+function loadFrom(d) {
+  currentId = d.id;
+  ["number","bookingDate","service","bookingStatus",
+   "headerAddress","headerPhone","headerEmail","headerWebsite",
+   "checkInHint","checkOutHint",
+   "guestName","guestPhone","guestEmail",
+   "arrival","departure","rooms","roomCategory","mealPlan","note","terms"].forEach(k => { if ($(k)) $(k).value = d[k] || ""; });
+  $("adults").value = d.adults ?? 1;
+  $("children").value = d.children ?? 0;
+  $("infants").value = d.infants ?? 0;
+  hotels = Array.isArray(d.hotels) && d.hotels.length
+    ? d.hotels.map(h => Object.assign(emptyHotel(), h))
+    : [emptyHotel()];
+  additionalGuests = Array.isArray(d.additionalGuests)
+    ? d.additionalGuests.map(g => typeof g === "string" ? g : (g && g.name) || "").filter(Boolean)
+    : [];
+  refreshNights();
+  renderHotels();
+  renderAddGuests();
+  setStatus(`Editing ${d.number}`);
+}
+
+document.querySelectorAll("#mainForm input, #mainForm textarea, #mainForm select").forEach(el => {
+  el.addEventListener("input",  () => { refreshNights(); updatePreview(); });
+  el.addEventListener("change", () => { refreshNights(); updatePreview(); });
+});
+$("addHotelBtn").addEventListener("click", () => {
+  hotels.push(emptyHotel());
+  renderHotels(); updatePreview();
+  const cards = $("hotelsBody").querySelectorAll(".hotel-card-ed");
+  cards[cards.length - 1]?.querySelector("input")?.focus();
+});
+$("addGuestBtn").addEventListener("click", () => {
+  additionalGuests.push("");
+  renderAddGuests(); updatePreview();
+  const rows = $("addGuestsBody").querySelectorAll("[data-guest-name]");
+  rows[rows.length - 1]?.focus();
+});
+$("resetBtn").addEventListener("click", () => {
+  if (!currentId || confirm("Start new voucher? Unsaved changes will be lost.")) location.href = "voucher.html";
+});
+
+DocActions.attach({
+  btnSave: $("btnSave"), btnPrint: $("btnPrint"), btnPDF: $("btnPDF"), btnCopy: $("btnCopy"), btnEmail: $("btnEmail"),
+  getDoc: buildDoc, validate,
+  onSaved: (d) => { currentId = d.id; updatePreview(); },
+  setStatus
+});
+
+const params = new URLSearchParams(location.search);
+const id = params.get("id");
+if (id) {
+  const d = Store.get(id);
+  if (d) loadFrom(d);
+  else { prefill(); Toast.show("Voucher not found — starting new", "warn"); }
+} else {
+  prefill();
+}
+renderHotels();
+renderAddGuests();
+updatePreview();
+</script>
+</body>
+</html>

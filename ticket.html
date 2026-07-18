@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Airline Ticket Maker — Akij Holidays</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  .pax-card {
+    background: var(--surface-2);
+    border: 1px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .pax-card .pc-head { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; }
+  .pax-card .pc-title { font-size: 12px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: .04em; }
+  .pax-card .remove { background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;line-height:1; }
+  .pax-card .remove:hover { background: rgba(198,40,40,.12); color: var(--danger); }
+  .airline-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .airline-preview img { height: 32px; width: auto; background: #fff; border-radius: 4px; padding: 2px; }
+
+  /* Smart-import card */
+  .import-card {
+    background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%);
+    border: 1px solid rgba(0, 74, 173, .28);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-xs);
+  }
+  .import-card .ic-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .import-card .ic-head .ic-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #004aad, #00347a);
+    color: #fff;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .import-card .ic-head .ic-title { font-weight: 700; font-size: 14px; color: var(--accent); }
+  .import-card .ic-head .ic-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .import-drop {
+    border: 2px dashed rgba(0, 74, 173, .35);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, .6);
+    transition: border-color .18s, background-color .18s;
+    cursor: pointer;
+  }
+  .import-drop:hover, .import-drop.drag { border-color: var(--accent); background: rgba(255, 255, 255, .9); }
+  .import-drop .id-icon { font-size: 28px; opacity: .7; margin-bottom: 6px; }
+  .import-drop .id-text { font-size: 13.5px; color: var(--text); font-weight: 600; }
+  .import-drop .id-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  .import-status {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .import-status.info    { display: flex; background: var(--info-soft); color: var(--info); border: 1px solid rgba(2, 132, 199, .28); }
+  .import-status.success { display: flex; background: var(--success-soft); color: var(--success); border: 1px solid rgba(15, 157, 88, .28); }
+  .import-status.error   { display: flex; background: var(--danger-soft); color: var(--danger); border: 1px solid rgba(198, 40, 40, .28); }
+  .import-paste-toggle {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: 12.5px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+  .import-paste-toggle:hover { background: rgba(0, 74, 173, .06); text-decoration: none; }
+  .import-paste-box { display: none; margin-top: 10px; }
+  .import-paste-box.open { display: block; }
+  .import-paste-box textarea {
+    width: 100%;
+    min-height: 140px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--surface);
+    color: var(--text);
+    resize: vertical;
+  }
+  .import-paste-box textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 74, 173, .18); }
+  .airline-preview .info { flex: 1; min-width: 0; }
+  .airline-preview .info .n { font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .airline-preview .info .c { font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<div id="mainOutlet">
+  <div class="toolbar">
+    <h1>✈️ Airline Ticket Maker</h1>
+    <span class="status" id="statusText"><span class="dot"></span>Ready</span>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost btn-sm" id="resetBtn" type="button">🔄 New</button>
+    <button class="btn btn-ghost btn-sm" id="btnCopy"  type="button">📋 Copy Text</button>
+    <button class="btn btn-accent btn-sm" id="btnSave" type="button">💾 Save</button>
+    <button class="btn btn-primary btn-sm" id="btnPDF" type="button">📄 PDF</button>
+    <button class="btn btn-accent btn-sm"  id="btnEmail" type="button">✉️ Email PDF</button>
+    <button class="btn btn-primary btn-sm" id="btnPrint" type="button">🖨️ Print</button>
+  </div>
+
+  <div class="work-grid">
+    <form id="mainForm" onsubmit="return false;" novalidate>
+
+      <div class="import-card">
+        <div class="ic-head">
+          <div class="ic-icon">✨</div>
+          <div>
+            <div class="ic-title">Smart Ticket Import</div>
+            <div class="ic-sub">Upload a PDF / image / text e-ticket — we’ll auto-fill everything below.</div>
+          </div>
+        </div>
+        <div class="import-drop" id="importDrop" tabindex="0" role="button" aria-label="Upload ticket file">
+          <div class="id-icon" aria-hidden="true">📄</div>
+          <div class="id-text">Drop a ticket PDF, image or text file here — or click to browse</div>
+          <div class="id-sub">Supports .pdf · .png / .jpg · .txt — works offline once loaded</div>
+          <input type="file" id="importFile" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,image/*,application/pdf" style="display:none;">
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:6px;">
+          <button type="button" class="import-paste-toggle" id="pasteToggle">or paste ticket text here</button>
+        </div>
+        <div class="import-paste-box" id="pasteBox">
+          <textarea id="pasteArea" placeholder="Paste the entire e-ticket / itinerary text here… (PNR, flight, dates, passenger names, etc.)"></textarea>
+          <div class="row mt-1">
+            <button type="button" class="btn btn-accent btn-sm" id="pasteParseBtn">Extract fields →</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="pasteClearBtn">Clear</button>
+          </div>
+        </div>
+        <div class="import-status" id="importStatus"></div>
+      </div>
+
+      <div class="form-section">
+        <h3>Company Contact <span class="hint" style="font-weight:400;">(appears next to the logo)</span></h3>
+        <div class="form-row">
+          <div class="form-group" style="flex:2;"><label>Address</label><input id="headerAddress" placeholder="Cosy Nook, House 10, Road 4, Gulshan 1, Dhaka, Bangladesh"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Phone</label><input id="headerPhone" inputmode="tel" placeholder="+880 9613 500850"/></div>
+          <div class="form-group"><label>Email</label><input type="email" id="headerEmail" inputmode="email" placeholder="holidays@akijair.com"/></div>
+          <div class="form-group"><label>Website</label><input id="headerWebsite" placeholder="www.akijair.com"/></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Booking References</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Ticket Reference <span class="req">*</span></label><input id="number" required autocomplete="off" /></div>
+          <div class="form-group"><label>PNR <span class="req">*</span></label><input id="pnr" placeholder="e.g., ABC123" style="text-transform:uppercase" required autocomplete="off" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Ticket Number <span class="req">*</span></label><input id="ticketNumber" placeholder="e.g., 217-1234567890" required autocomplete="off" /></div>
+          <div class="form-group"><label>Booking Reference (GDS)</label><input id="bookingRef" placeholder="e.g., Sabre / Amadeus locator" autocomplete="off" /></div>
+          <div class="form-group"><label>Status</label>
+            <select id="status">
+              <option value="">— None —</option>
+              <option>Confirmed</option><option>Pending</option><option>On Hold</option><option>Cancelled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Airline &amp; Flight</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Airline <span class="req">*</span></label>
+            <div class="ac-wrap"><input id="airlineInput" placeholder="Type name or IATA code…" required autocomplete="off" /></div>
+            <div class="airline-preview" id="airlinePreview" style="display:none">
+              <img id="airlineLogoPreview" alt=""/>
+              <div class="info"><div class="n" id="airlineName">—</div><div class="c" id="airlineCode">—</div></div>
+            </div>
+          </div>
+          <div class="form-group"><label>Flight Number</label><input id="flightNumber" placeholder="e.g., 217" autocomplete="off" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Class</label><select id="class"></select></div>
+          <div class="form-group"><label>Cabin</label><select id="cabin"></select></div>
+          <div class="form-group"><label>Fare Basis</label><input id="fareBasis" autocomplete="off" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Baggage</label><input id="baggage" placeholder="e.g., 30 kg + 7 kg cabin" autocomplete="off" /></div>
+          <div class="form-group"><label>Meal</label><select id="meal"></select></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Departure</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Airport <span class="req">*</span></label>
+            <div class="ac-wrap"><input id="depInput" placeholder="Type city, IATA or ICAO…" required autocomplete="off" /></div>
+            <div class="hint" id="depSelected"></div>
+          </div>
+          <div class="form-group"><label>Date <span class="req">*</span></label><input type="date" id="departDate" required /></div>
+          <div class="form-group"><label>Time</label><input type="time" id="departTime" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Terminal</label><input id="departTerminal" autocomplete="off" /></div>
+          <div class="form-group"><label>Gate</label><input id="departGate" autocomplete="off" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Arrival</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Airport <span class="req">*</span></label>
+            <div class="ac-wrap"><input id="arrInput" placeholder="Type city, IATA or ICAO…" required autocomplete="off" /></div>
+            <div class="hint" id="arrSelected"></div>
+          </div>
+          <div class="form-group"><label>Date</label><input type="date" id="arriveDate" /></div>
+          <div class="form-group"><label>Time</label><input type="time" id="arriveTime" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Terminal</label><input id="arriveTerminal" autocomplete="off" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Passengers</h3>
+        <div id="paxBody"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addPaxBtn">+ Add Passenger</button>
+      </div>
+
+      <div class="form-section">
+        <h3>Notes &amp; Fare Rules</h3>
+        <div class="form-group"><label>Notes</label><textarea id="notes" rows="2"></textarea></div>
+        <div class="form-group"><label>Terms / Fare Rules</label><textarea id="terms" rows="3"></textarea></div>
+      </div>
+    </form>
+
+    <div class="preview-wrap">
+      <h3>Live Preview</h3>
+      <div id="previewNode"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="aviation-data.js"></script>
+<script src="doc-renderers.js"></script>
+<script src="doc-actions.js"></script>
+<script src="ticket-import.js"></script>
+<script>
+const { CFG, Store, Toast, Autocomplete, uid, nowIso, escapeHTML } = AkijApp;
+AkijApp.mountShell({ active: "ticket", title: "Airline Ticket", crumb: "Create · Airline Ticket" });
+
+const $ = id => document.getElementById(id);
+const val = id => ($(id)?.value ?? "").trim();
+
+/* Populate select vocab */
+(function () {
+  const AV = window.Aviation || { CLASSES: [], CABINS: [], MEALS: [] };
+  $("class").innerHTML = AV.CLASSES.map(c => `<option>${escapeHTML(c)}</option>`).join("");
+  $("cabin").innerHTML = AV.CABINS.map(c => `<option>${escapeHTML(c)}</option>`).join("");
+  $("meal").innerHTML  = `<option value=""></option>` + AV.MEALS.map(c => `<option>${escapeHTML(c)}</option>`).join("");
+})();
+
+let currentId = null;
+let selectedAirline = null;
+let departure = null;
+let arrival = null;
+let passengers = [{ name: "", type: "ADT", passport: "", nationality: "", dob: "", seat: "" }];
+
+/* Airline autocomplete */
+Autocomplete.attach($("airlineInput"), {
+  source: (q) => window.Aviation?.searchAirlines(q) || [],
+  renderItem: (a) => ({ code: a.iata, title: a.name, sub: `${a.icao} · ${a.country}` }),
+  toDisplay: (a) => `${a.iata} — ${a.name}`,
+  onSelect: (a) => {
+    selectedAirline = a;
+    $("airlinePreview").style.display = "flex";
+    $("airlineLogoPreview").src = window.Aviation?.airlineLogo(a.iata) || "";
+    $("airlineLogoPreview").onerror = () => { $("airlineLogoPreview").style.display = "none"; };
+    $("airlineLogoPreview").style.display = "";
+    $("airlineName").textContent = a.name;
+    $("airlineCode").textContent = `${a.iata} · ${a.icao} · ${a.country}`;
+    updatePreview();
+  }
+});
+
+/* Airport autocompletes */
+function airportAC(inputId, hintId, setter) {
+  Autocomplete.attach($(inputId), {
+    source: (q) => window.Aviation?.searchAirports(q) || [],
+    renderItem: (a) => ({ code: a.iata, title: `${a.city}, ${a.country}`, sub: `${a.name} · ${a.icao}` }),
+    toDisplay: (a) => `${a.iata} — ${a.city}`,
+    onSelect: (a) => {
+      setter(a);
+      $(hintId).textContent = `${a.name} · ${a.icao || ""}`.trim().replace(/·\s*$/, "");
+      updatePreview();
+    }
+  });
+}
+airportAC("depInput", "depSelected", (a) => departure = a);
+airportAC("arrInput", "arrSelected", (a) => arrival = a);
+
+function renderPax() {
+  const body = $("paxBody");
+  body.innerHTML = passengers.map((p, i) => `
+    <div class="pax-card" data-i="${i}">
+      <div class="pc-head">
+        <div class="pc-title">Passenger #${i + 1}</div>
+        <button type="button" class="remove" aria-label="Remove passenger" title="Remove passenger">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Full Name (as on passport)</label><input data-k="name" value="${escapeHTML(p.name || "")}" autocomplete="off"/></div>
+        <div class="form-group"><label>Type</label>
+          <select data-k="type">
+            <option value="ADT" ${p.type === "ADT" ? "selected" : ""}>Adult (ADT)</option>
+            <option value="CHD" ${p.type === "CHD" ? "selected" : ""}>Child (CHD)</option>
+            <option value="INF" ${p.type === "INF" ? "selected" : ""}>Infant (INF)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Seat</label><input data-k="seat" value="${escapeHTML(p.seat || "")}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Passport Number</label><input data-k="passport" value="${escapeHTML(p.passport || "")}" style="text-transform:uppercase"/></div>
+        <div class="form-group"><label>Nationality</label><input data-k="nationality" value="${escapeHTML(p.nationality || "")}"/></div>
+        <div class="form-group"><label>Date of Birth</label><input type="date" data-k="dob" value="${escapeHTML(p.dob || "")}"/></div>
+      </div>
+    </div>
+  `).join("");
+  body.querySelectorAll(".pax-card").forEach(card => {
+    const i = Number(card.dataset.i);
+    card.querySelectorAll("[data-k]").forEach(el => {
+      el.addEventListener("input", (e) => { passengers[i][e.target.dataset.k] = e.target.value; updatePreview(); });
+      el.addEventListener("change", (e) => { passengers[i][e.target.dataset.k] = e.target.value; updatePreview(); });
+    });
+    card.querySelector(".remove").addEventListener("click", () => {
+      if (passengers.length <= 1) { passengers = [{ name: "", type: "ADT" }]; }
+      else { passengers.splice(i, 1); }
+      renderPax(); updatePreview();
+    });
+  });
+}
+
+function buildDoc() {
+  return {
+    id: currentId || uid("ticket"),
+    type: "ticket",
+    number: val("number"),
+    headerAddress: val("headerAddress"),
+    headerPhone:   val("headerPhone"),
+    headerEmail:   val("headerEmail"),
+    headerWebsite: val("headerWebsite"),
+    pnr: val("pnr").toUpperCase(),
+    ticketNumber: val("ticketNumber"),
+    bookingRef: val("bookingRef"),
+    status: val("status"),
+    airline: selectedAirline || undefined,
+    flightNumber: val("flightNumber"),
+    class: val("class"), cabin: val("cabin"),
+    fareBasis: val("fareBasis"), baggage: val("baggage"), meal: val("meal"),
+    departure: departure || undefined,
+    departDate: val("departDate"), departTime: val("departTime"),
+    departTerminal: val("departTerminal"), departGate: val("departGate"),
+    arrival: arrival || undefined,
+    arriveDate: val("arriveDate"), arriveTime: val("arriveTime"),
+    arriveTerminal: val("arriveTerminal"),
+    passengers: passengers.filter(p => (p.name || "").trim()).map(p => ({ ...p })),
+    notes: val("notes"), terms: val("terms"),
+    createdAt: currentId ? (Store.get(currentId)?.createdAt || nowIso()) : nowIso(),
+    updatedAt: nowIso()
+  };
+}
+function validate() {
+  if (!val("number"))       return "Ticket reference is required";
+  if (!val("pnr"))          return "PNR is required";
+  if (!val("ticketNumber")) return "Ticket number is required";
+  if (!selectedAirline)     return "Select an airline from the dropdown";
+  if (!departure)           return "Select a departure airport";
+  if (!arrival)             return "Select an arrival airport";
+  if (departure.iata === arrival.iata) return "Departure and arrival airports must be different";
+  if (!val("departDate"))   return "Departure date is required";
+  const validPax = passengers.filter(p => (p.name || "").trim());
+  if (!validPax.length)     return "At least one passenger name is required";
+  return null;
+}
+
+const updatePreview = DocActions.makeDebouncedPreview($("previewNode"), buildDoc, 120);
+function setStatus(t, kind) {
+  const s = $("statusText");
+  s.className = "status" + (kind === "working" ? " working" : kind === "error" ? " error" : "");
+  s.innerHTML = `<span class="dot"></span>${escapeHTML(t)}`;
+}
+
+function prefill() {
+  const co = CFG.COMPANY || {};
+  $("number").value = Store.nextNumber("ticket");
+  $("departDate").value = new Date(Date.now() + 3 * 86400000).toISOString().split("T")[0];
+  $("headerAddress").value = co.address || "";
+  $("headerPhone").value   = co.phone   || "";
+  $("headerEmail").value   = co.email   || "";
+  $("headerWebsite").value = co.website || "";
+}
+function loadFrom(d) {
+  currentId = d.id;
+  ["number","headerAddress","headerPhone","headerEmail","headerWebsite",
+   "pnr","ticketNumber","bookingRef","status","flightNumber",
+   "class","cabin","fareBasis","baggage","meal",
+   "departDate","departTime","departTerminal","departGate",
+   "arriveDate","arriveTime","arriveTerminal","notes","terms"].forEach(k => { if ($(k)) $(k).value = d[k] || ""; });
+  if (d.airline) {
+    selectedAirline = d.airline;
+    $("airlineInput").value = `${d.airline.iata || ""} — ${d.airline.name || ""}`.replace(/^—\s+/,"");
+    $("airlinePreview").style.display = "flex";
+    $("airlineLogoPreview").src = window.Aviation?.airlineLogo(d.airline.iata) || "";
+    $("airlineLogoPreview").onerror = () => { $("airlineLogoPreview").style.display = "none"; };
+    $("airlineLogoPreview").style.display = "";
+    $("airlineName").textContent = d.airline.name || "—";
+    $("airlineCode").textContent = `${d.airline.iata || ""} · ${d.airline.icao || ""} · ${d.airline.country || ""}`.replace(/·\s*·/g, "·").replace(/^·\s*|\s*·$/g, "");
+  }
+  if (d.departure) {
+    departure = d.departure;
+    $("depInput").value = `${d.departure.iata} — ${d.departure.city}`;
+    $("depSelected").textContent = `${d.departure.name} · ${d.departure.icao || ""}`.replace(/·\s*$/, "");
+  }
+  if (d.arrival) {
+    arrival = d.arrival;
+    $("arrInput").value = `${d.arrival.iata} — ${d.arrival.city}`;
+    $("arrSelected").textContent = `${d.arrival.name} · ${d.arrival.icao || ""}`.replace(/·\s*$/, "");
+  }
+  passengers = Array.isArray(d.passengers) && d.passengers.length ? d.passengers.map(p => ({ ...p })) : [{ name: "", type: "ADT" }];
+  renderPax();
+  setStatus(`Editing ${d.number}`);
+}
+
+document.querySelectorAll("#mainForm input, #mainForm textarea, #mainForm select").forEach(el => {
+  el.addEventListener("input", updatePreview);
+  el.addEventListener("change", updatePreview);
+});
+$("addPaxBtn").addEventListener("click", () => {
+  passengers.push({ name: "", type: "ADT", passport: "", nationality: "", dob: "", seat: "" });
+  renderPax(); updatePreview();
+  const cards = $("paxBody").querySelectorAll(".pax-card");
+  cards[cards.length - 1]?.querySelector("input")?.focus();
+});
+$("resetBtn").addEventListener("click", () => {
+  if (!currentId || confirm("Start new ticket? Unsaved changes will be lost.")) location.href = "ticket.html";
+});
+
+DocActions.attach({
+  btnSave: $("btnSave"), btnPrint: $("btnPrint"), btnPDF: $("btnPDF"), btnCopy: $("btnCopy"), btnEmail: $("btnEmail"),
+  getDoc: buildDoc, validate,
+  onSaved: (d) => { currentId = d.id; updatePreview(); },
+  setStatus
+});
+
+const id = new URLSearchParams(location.search).get("id");
+if (id) {
+  const d = Store.get(id);
+  if (d) loadFrom(d);
+  else { prefill(); Toast.show("Not found — starting new", "warn"); }
+} else {
+  prefill();
+}
+renderPax();
+updatePreview();
+
+/* ============================================================
+   Smart Ticket Import wiring
+   ============================================================ */
+(function () {
+  const drop     = $("importDrop");
+  const fileEl   = $("importFile");
+  const statusEl = $("importStatus");
+  const pasteBtn = $("pasteToggle");
+  const pasteBox = $("pasteBox");
+  const pasteTA  = $("pasteArea");
+  const pasteParse = $("pasteParseBtn");
+  const pasteClear = $("pasteClearBtn");
+  if (!drop || !fileEl) return;
+
+  function setStatus(kind, msg) {
+    if (!kind) { statusEl.className = "import-status"; statusEl.textContent = ""; return; }
+    statusEl.className = "import-status " + kind;
+    const prefix = kind === "info" ? '<span class="loader" style="width:14px;height:14px;"></span>' : (kind === "success" ? "✓ " : "✕ ");
+    statusEl.innerHTML = prefix + escapeHTML(msg);
+  }
+
+  function applyParsed(p) {
+    if (!p) { setStatus("error", "Could not read the file."); return; }
+    let hits = 0;
+    if (p.pnr && !val("pnr"))                { $("pnr").value = p.pnr.toUpperCase(); hits++; }
+    if (p.ticketNumber && !val("ticketNumber")) { $("ticketNumber").value = p.ticketNumber; hits++; }
+    if (p.flightNumber && !val("flightNumber")) { $("flightNumber").value = p.flightNumber; hits++; }
+    if (p.airline) {
+      selectedAirline = p.airline;
+      $("airlineInput").value = `${p.airline.iata || ""} — ${p.airline.name || ""}`.replace(/^—\s+/, "");
+      $("airlinePreview").style.display = "flex";
+      const logoEl = $("airlineLogoPreview");
+      logoEl.src = window.Aviation?.airlineLogo(p.airline.iata) || "";
+      logoEl.onerror = () => { logoEl.style.display = "none"; };
+      logoEl.style.display = "";
+      $("airlineName").textContent = p.airline.name || "—";
+      $("airlineCode").textContent = `${p.airline.iata || ""} · ${p.airline.icao || ""} · ${p.airline.country || ""}`.replace(/^·\s+|\s+·$/g, "");
+      hits++;
+    }
+    if (p.departure) {
+      departure = p.departure;
+      $("depInput").value = `${p.departure.iata} — ${p.departure.city}`;
+      $("depSelected").textContent = `${p.departure.name || ""} · ${p.departure.icao || ""}`.replace(/·\s*$/, "");
+      hits++;
+    }
+    if (p.arrival) {
+      arrival = p.arrival;
+      $("arrInput").value = `${p.arrival.iata} — ${p.arrival.city}`;
+      $("arrSelected").textContent = `${p.arrival.name || ""} · ${p.arrival.icao || ""}`.replace(/·\s*$/, "");
+      hits++;
+    }
+    if (p.departDate && !val("departDate")) { $("departDate").value = p.departDate; hits++; }
+    if (p.departTime && !val("departTime")) { $("departTime").value = p.departTime; hits++; }
+    if (p.arriveDate && !val("arriveDate")) { $("arriveDate").value = p.arriveDate; hits++; }
+    if (p.arriveTime && !val("arriveTime")) { $("arriveTime").value = p.arriveTime; hits++; }
+    if (p.class && !val("class"))           { $("class").value = p.class; hits++; }
+    if (p.cabin && !val("cabin"))           { $("cabin").value = p.cabin; hits++; }
+    if (p.baggage && !val("baggage"))       { $("baggage").value = p.baggage; hits++; }
+    if (Array.isArray(p.passengers) && p.passengers.length) {
+      const existingNames = new Set(passengers.map(x => (x.name || "").toUpperCase().trim()).filter(Boolean));
+      const newOnes = p.passengers.filter(x => !existingNames.has((x.name || "").toUpperCase().trim()));
+      if (newOnes.length) {
+        const first = passengers[0];
+        if (passengers.length === 1 && !(first?.name || "").trim()) passengers = [];
+        passengers.push(...newOnes.map(x => ({ name: x.name, type: x.type || "ADT" })));
+        renderPax();
+        hits += newOnes.length;
+      }
+    }
+    updatePreview();
+    if (hits === 0) {
+      setStatus("error", "Could not detect ticket fields. Try pasting the text manually.");
+    } else {
+      setStatus("success", `Filled ${hits} field${hits === 1 ? "" : "s"} from ticket. Review before saving.`);
+      Toast.show(`Smart import: filled ${hits} field${hits === 1 ? "" : "s"}`, "success");
+    }
+  }
+
+  async function handleFile(file) {
+    if (!file) return;
+    if (!window.TicketImport) { setStatus("error", "Importer not loaded"); return; }
+    setStatus("info", `Reading ${file.name || "file"}…`);
+    try {
+      const parsed = await window.TicketImport.parseFile(file, (m) => {
+        if (!m || !m.status) return;
+        const map = {
+          "reading": "Reading file…",
+          "extracting-pdf": "Extracting text from PDF…",
+          "loading-ocr": "Loading OCR engine (first time only)…",
+          "parsing": "Extracting ticket fields…",
+          "recognizing text": `OCR${m.progress ? " " + Math.round(m.progress * 100) + "%" : ""}…`,
+          "loading tesseract core": "Loading OCR core…",
+          "initializing tesseract": "Initializing OCR…",
+          "loading language traineddata": "Loading English model…",
+          "initializing api": "Initializing OCR…",
+          "done": "Extracted — filling form…"
+        };
+        setStatus("info", map[m.status] || m.status);
+      });
+      applyParsed(parsed);
+    } catch (e) {
+      console.error(e);
+      setStatus("error", "Import failed: " + (e.message || "unknown"));
+    }
+  }
+
+  drop.addEventListener("click", () => fileEl.click());
+  drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileEl.click(); } });
+  fileEl.addEventListener("change", (e) => { handleFile(e.target.files?.[0]); e.target.value = ""; });
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("drag"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("drag"); }));
+  drop.addEventListener("drop", (e) => { e.preventDefault(); const f = e.dataTransfer?.files?.[0]; if (f) handleFile(f); });
+
+  if (pasteBtn) pasteBtn.addEventListener("click", () => {
+    pasteBox.classList.toggle("open");
+    if (pasteBox.classList.contains("open")) pasteTA.focus();
+  });
+  if (pasteParse) pasteParse.addEventListener("click", () => {
+    const txt = pasteTA.value.trim();
+    if (!txt) { setStatus("error", "Paste ticket text first."); return; }
+    setStatus("info", "Extracting ticket fields…");
+    try { applyParsed(window.TicketImport.parseText(txt)); }
+    catch (e) { setStatus("error", e.message || "Parse failed"); }
+  });
+  if (pasteClear) pasteClear.addEventListener("click", () => { pasteTA.value = ""; setStatus(); });
+})();
+
+</script>
+</body>
+</html>

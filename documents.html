@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>All Documents — Akij Holidays</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .filters input, .filters select {
+    padding: 9px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13.5px;
+    line-height: 1.4;
+    min-height: 38px;
+  }
+  .filters input:focus, .filters select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-ring);
+  }
+  .filters .search {
+    flex: 1;
+    min-width: 240px;
+    padding-left: 38px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'/><path d='m21 21-4.35-4.35'/></svg>");
+    background-repeat: no-repeat;
+    background-position: 13px center;
+    background-size: 15px;
+  }
+  .filters input[type="date"] { min-width: 150px; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-weight: 600;
+    font-size: 13px;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab .cnt {
+    display: inline-block;
+    background: var(--surface-2);
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    min-width: 22px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .tab.active .cnt { background: var(--primary-soft); color: var(--primary); }
+  .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+  .amount { font-weight: 600; color: var(--primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cell-muted { color: var(--text-muted); font-size: 12.5px; }
+  .list-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+  }
+  .list-wrapper table { margin: 0; border: none; border-radius: 0; }
+  .cloud-progress {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--info-soft);
+    color: var(--info);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .cloud-progress.show { display: flex; }
+  .num-col { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+  .party-col { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div id="mainOutlet">
+  <div class="row mb-2">
+    <div>
+      <h2 class="section-title">📚 All Documents</h2>
+      <p class="section-sub" style="margin:2px 0 0;">Local browser cache and any files saved to your GitHub repository, side by side.</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost btn-sm" id="btnRefresh" type="button">🔄 Refresh</button>
+    <button class="btn btn-ghost btn-sm" id="btnBackup" type="button">⬇️ Backup JSON</button>
+    <label class="btn btn-ghost btn-sm" for="importInput" style="cursor:pointer">⬆️ Restore</label>
+    <input type="file" id="importInput" accept="application/json,.json" hidden>
+  </div>
+
+  <div class="card">
+    <div class="tabs" id="typeTabs" role="tablist"></div>
+
+    <div class="filters">
+      <input type="search" class="search" id="q" placeholder="Search by number, name, PNR, passport, hotel…" aria-label="Search documents" />
+      <select id="sourceFilter" aria-label="Data source">
+        <option value="both">Local + Cloud</option>
+        <option value="local">Local only</option>
+        <option value="cloud">GitHub only</option>
+      </select>
+      <select id="sortSelect" aria-label="Sort">
+        <option value="updated-desc">Newest first</option>
+        <option value="updated-asc">Oldest first</option>
+        <option value="amount-desc">Amount ↓</option>
+        <option value="amount-asc">Amount ↑</option>
+        <option value="number-asc">Number A→Z</option>
+      </select>
+      <input type="date" id="dateFrom" aria-label="Date from" title="From date" />
+      <input type="date" id="dateTo" aria-label="Date to" title="To date" />
+    </div>
+
+    <div id="cloudProgress" class="cloud-progress">
+      <span class="loader"></span>
+      <span id="cloudProgressText">Loading cloud documents…</span>
+    </div>
+
+    <div class="list-wrapper">
+      <div id="listBody"></div>
+    </div>
+    <div id="resultInfo" class="text-muted mt-1" style="font-size:12.5px;"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+const { CFG, Store, GitHub, Toast, escapeHTML, formatMoney, formatDate, debounce } = AkijApp;
+AkijApp.mountShell({ active: "documents", title: "All Documents", crumb: "Documents", showSearch: false });
+
+const TYPES = CFG.DOC_TYPES;
+const TYPE_ORDER = Object.keys(TYPES);
+
+let currentType = "all";
+let currentQ    = "";
+let currentSort = "updated-desc";
+let currentSource = "both";
+let currentDateFrom = "";
+let currentDateTo = "";
+let cloudDocs = [];
+
+/* ---- Helpers ---- */
+function pageFor(t) {
+  const map = { invoice: "invoice.html", voucher: "voucher.html", ticket: "ticket.html", ticketInvoice: "ticket-invoice.html" };
+  return map[t] || "index.html";
+}
+function partyOf(d) {
+  return d.clientName || d.guestName || d.paidBy || d.applicantName || (d.passengers && d.passengers[0]?.name) || "—";
+}
+function amountOf(d) {
+  if (typeof d.total  === "number" && d.total  > 0) return formatMoney(d.total,  d.currency);
+  if (typeof d.amount === "number" && d.amount > 0) return formatMoney(d.amount, d.currency);
+  return "";
+}
+function dateOf(d) {
+  return d.invoiceDate || d.receiptDate || d.quoteDate || d.docDate || d.updatedAt || d.createdAt;
+}
+function amountRaw(d) { return Number(d.total) || Number(d.amount) || 0; }
+function typeIcon(t)  { return TYPES[t]?.icon  || "📄"; }
+function typeLabel(t) { return TYPES[t]?.label || t; }
+
+/* Merge local + cloud into a single list; cloud entries preserve githubPath. */
+function mergedDocs() {
+  const local = Store.all();
+  const byId  = new Map(local.map(d => [d.id, d]));
+  const source = currentSource;
+  let result;
+  if (source === "local") result = local;
+  else if (source === "cloud") result = cloudDocs;
+  else {
+    // Merge: prefer local (may have unsaved edits), then cloud-only
+    result = [...local];
+    for (const cd of cloudDocs) {
+      if (!byId.has(cd.id)) result.push(cd);
+    }
+  }
+  return result;
+}
+
+/* ---- Tabs ---- */
+function renderTabs() {
+  const merged = mergedDocs();
+  const counts = { all: merged.length };
+  for (const t of TYPE_ORDER) counts[t] = 0;
+  for (const d of merged) if (counts[d.type] !== undefined) counts[d.type]++;
+  const tabs = [{ key: "all", label: "All Types", icon: "📚" },
+                ...TYPE_ORDER.map(k => ({ key: k, label: TYPES[k].label, icon: TYPES[k].icon }))];
+  document.getElementById("typeTabs").innerHTML = tabs
+    .map(t => `<button class="tab ${currentType === t.key ? "active" : ""}" data-t="${t.key}" role="tab" aria-selected="${currentType === t.key}">
+      <span aria-hidden="true">${t.icon}</span>
+      <span>${escapeHTML(t.label)}</span>
+      <span class="cnt">${counts[t.key] || 0}</span>
+    </button>`).join("");
+  document.querySelectorAll("#typeTabs .tab").forEach(el => {
+    el.addEventListener("click", () => { currentType = el.dataset.t; render(); });
+  });
+}
+
+/* ---- Filter & sort ---- */
+function filterSort(list) {
+  let out = list;
+  if (currentType !== "all") out = out.filter(d => d.type === currentType);
+  if (currentQ) {
+    const q = currentQ.toLowerCase();
+    out = out.filter(d => {
+      const bag = [
+        d.number, d.id,
+        d.clientName, d.clientCompany, d.clientEmail, d.clientPhone,
+        d.guestName, d.guestEmail, d.guestPhone,
+        d.paidBy, d.applicantName, d.passportNumber,
+        d.pnr, d.ticketNumber, d.bookingRef,
+        (d.hotels || []).map(h => `${h.name || ""} ${h.city || ""}`).join(" "),
+        (d.passengers || []).map(p => p.name || "").join(" "),
+        d.subject, d.purpose, d.destination, d.country,
+        d.airline?.name, d.departure?.city, d.arrival?.city
+      ].filter(Boolean).join(" ").toLowerCase();
+      return bag.includes(q);
+    });
+  }
+  if (currentDateFrom) {
+    const from = new Date(currentDateFrom + "T00:00:00").getTime();
+    out = out.filter(d => { const t = new Date(dateOf(d)).getTime(); return isFinite(t) && t >= from; });
+  }
+  if (currentDateTo) {
+    const to = new Date(currentDateTo + "T23:59:59").getTime();
+    out = out.filter(d => { const t = new Date(dateOf(d)).getTime(); return isFinite(t) && t <= to; });
+  }
+  const sorters = {
+    "updated-desc": (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0),
+    "updated-asc":  (a, b) => new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0),
+    "amount-desc":  (a, b) => amountRaw(b) - amountRaw(a),
+    "amount-asc":   (a, b) => amountRaw(a) - amountRaw(b),
+    "number-asc":   (a, b) => String(a.number || "").localeCompare(String(b.number || ""))
+  };
+  out = [...out].sort(sorters[currentSort] || sorters["updated-desc"]);
+  return out;
+}
+
+/* ---- Render list ---- */
+function render() {
+  renderTabs();
+  const list = filterSort(mergedDocs());
+  const host = document.getElementById("listBody");
+  if (!list.length) {
+    host.innerHTML = `<div class="empty">
+      <div class="empty-icon">🗂️</div>
+      <h3>No documents match</h3>
+      <p>Try adjusting your search or filters.</p>
+    </div>`;
+    document.getElementById("resultInfo").textContent = "";
+    return;
+  }
+  host.innerHTML = `<table class="data-table">
+    <thead>
+      <tr>
+        <th style="width:44px"></th>
+        <th>Number</th>
+        <th>Party</th>
+        <th class="hide-mobile">Type</th>
+        <th class="hide-mobile" style="text-align:right;">Amount</th>
+        <th class="hide-mobile">Date</th>
+        <th class="hide-mobile">Source</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    ${list.map(d => {
+      const amt = amountOf(d);
+      const source = d.githubPath ? `<span class="badge badge-synced">✓ Synced</span>`
+                    : d._cloudOnly ? `<span class="badge badge-cloud">Cloud</span>`
+                    : `<span class="badge badge-local">Local</span>`;
+      const disabledDel = d._cloudOnly ? " disabled title='Cloud-only — open to sync locally'" : "";
+      return `<tr data-id="${escapeHTML(d.id)}">
+        <td style="font-size:20px;text-align:center;" aria-hidden="true">${typeIcon(d.type)}</td>
+        <td class="num-col">${escapeHTML(d.number || d.id)}</td>
+        <td class="party-col" title="${escapeHTML(partyOf(d))}">${escapeHTML(partyOf(d))}</td>
+        <td class="hide-mobile"><span class="badge badge-${d.type}">${escapeHTML(typeLabel(d.type))}</span></td>
+        <td class="hide-mobile" style="text-align:right;">${amt ? `<span class="amount">${escapeHTML(amt)}</span>` : `<span class="cell-muted">—</span>`}</td>
+        <td class="hide-mobile cell-muted">${escapeHTML(formatDate(dateOf(d)))}</td>
+        <td class="hide-mobile">${source}</td>
+        <td>
+          <div class="row-actions">
+            <a class="icon-btn" href="${pageFor(d.type)}?id=${encodeURIComponent(d.id)}" title="Open / Edit" aria-label="Open">✏️</a>
+            <button class="icon-btn danger" data-act="delete" data-id="${escapeHTML(d.id)}" title="Delete" aria-label="Delete"${disabledDel}>🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join("")}
+    </tbody>
+  </table>`;
+  document.getElementById("resultInfo").textContent =
+    `Showing ${list.length} of ${mergedDocs().length} documents.`;
+
+  host.querySelectorAll('[data-act="delete"]').forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      const d  = Store.get(id) || cloudDocs.find(c => c.id === id);
+      if (!d) return;
+      if (!confirm(`Delete ${d.number || d.id}? This cannot be undone.`)) return;
+      // Cloud delete first (so we know if there's a stale copy in GH)
+      if (d.githubPath && GitHub.isEnabled()) {
+        Toast.show("Removing cloud copy…", "info", 1500);
+        const res = await GitHub.deleteDoc(d.githubPath);
+        if (!res.ok) Toast.show("Cloud delete failed: " + (res.error || "unknown"), "warn", 4000);
+      }
+      Store.remove(id);
+      Toast.show("Deleted", "success");
+      await loadCloud();
+      render();
+    });
+  });
+}
+
+/* ---- Cloud fetch (aggregates all JSONs in the repo) ---- */
+async function loadCloud() {
+  if (!GitHub.isEnabled()) { cloudDocs = []; return; }
+  const p = document.getElementById("cloudProgress");
+  p.classList.add("show");
+  document.getElementById("cloudProgressText").textContent = "Loading cloud documents…";
+  try {
+    const files = await GitHub.listAll();
+    const docs  = [];
+    let done = 0;
+    const total = files.length;
+    // Limit parallelism to be nice to GitHub API
+    const batchSize = 6;
+    for (let i = 0; i < files.length; i += batchSize) {
+      const batch = files.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map(f => GitHub.fetchDoc(f.path)));
+      results.forEach((r, k) => {
+        done++;
+        if (r && r.doc) {
+          r.doc._cloudOnly = !Store.get(r.doc.id);
+          r.doc.githubPath = batch[k].path;
+          docs.push(r.doc);
+        }
+      });
+      document.getElementById("cloudProgressText").textContent = `Loading cloud documents… (${done}/${total})`;
+    }
+    cloudDocs = docs;
+  } catch (e) {
+    Toast.show("Cloud load failed: " + (e.message || "unknown"), "warn", 4000);
+    cloudDocs = [];
+  } finally {
+    p.classList.remove("show");
+  }
+}
+
+/* ---- Event wires ---- */
+const runFilter = debounce(() => render(), 100);
+document.getElementById("q").addEventListener("input", (e) => { currentQ = e.target.value.trim(); runFilter(); });
+document.getElementById("sourceFilter").addEventListener("change", (e) => { currentSource = e.target.value; render(); });
+document.getElementById("sortSelect").addEventListener("change", (e) => { currentSort = e.target.value; render(); });
+document.getElementById("dateFrom").addEventListener("change", (e) => { currentDateFrom = e.target.value; render(); });
+document.getElementById("dateTo").addEventListener("change", (e) => { currentDateTo = e.target.value; render(); });
+document.getElementById("btnRefresh").addEventListener("click", async () => { await loadCloud(); render(); });
+document.getElementById("btnBackup").addEventListener("click", () => {
+  try {
+    const data = Store.exportAll();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `akij-backup-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    Toast.show("Backup downloaded", "success");
+  } catch (e) { Toast.show("Backup failed: " + e.message, "error"); }
+});
+document.getElementById("importInput").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const txt = await f.text();
+    const data = JSON.parse(txt);
+    if (!confirm("This will REPLACE local documents & settings. Continue?")) return;
+    Store.importAll(data);
+    Toast.show("Backup restored", "success");
+    render();
+  } catch (err) { Toast.show("Invalid backup: " + err.message, "error"); }
+  e.target.value = "";
+});
+
+/* Query string prefill */
+const qs = new URLSearchParams(location.search);
+if (qs.get("q"))    { document.getElementById("q").value = qs.get("q"); currentQ = qs.get("q").toLowerCase(); }
+if (qs.get("type") && (qs.get("type") === "all" || TYPES[qs.get("type")])) { currentType = qs.get("type"); }
+
+renderTabs();
+render();
+loadCloud().then(render);
+</script>
+</body>
+</html>

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Invoice Maker — Akij Holidays</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  .items-editor { width:100%; border-collapse: collapse; font-size: 13.5px; }
+  .items-editor th { text-align:left; padding: 8px 6px; font-size: 11px; text-transform: uppercase; letter-spacing:.04em; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 600; }
+  .items-editor th.right { text-align: right; }
+  .items-editor td { padding: 5px 4px; vertical-align: middle; }
+  .items-editor input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .items-editor input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-ring); }
+  .items-editor input.right { text-align: right; font-variant-numeric: tabular-nums; }
+  .items-editor input.readonly { background: var(--surface-2); font-weight: 600; color: var(--primary); }
+  .del-btn { background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1; }
+  .del-btn:hover { background: rgba(198,40,40,.12); color: var(--danger); }
+  .totals-mini { display:flex; justify-content:flex-end; margin-top: 8px; }
+  .totals-mini table { border-collapse: collapse; }
+  .totals-mini td { padding: 4px 10px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .totals-mini td.label { color: var(--text-muted); text-align: left; padding-right: 24px; }
+  .totals-mini .grand td { color: var(--primary); font-weight: 700; font-size: 14px; border-top: 1px solid var(--border); padding-top: 8px; }
+  /* Bank repeater (mirrors voucher hotel repeater) */
+  .bank-card-ed {
+    background: linear-gradient(135deg, #fdf2f4 0%, var(--surface) 100%);
+    border: 1px solid rgba(142,1,26,.22); border-radius: 12px;
+    padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow-xs);
+    transition: box-shadow .18s, transform .18s;
+  }
+  .bank-card-ed:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+  .bank-card-ed .bc-head-ed { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed rgba(142,1,26,.18); }
+  .bank-card-ed .bc-title-ed { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:.04em; }
+  .bank-card-ed .bc-num { background:var(--primary); color:#fff; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .bank-card-ed .remove-bank { background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:18px; padding:4px 8px; border-radius:6px; line-height:1; }
+  .bank-card-ed .remove-bank:hover { background:rgba(198,40,40,.12); color:var(--danger); }
+</style>
+</head>
+<body>
+
+<div id="mainOutlet">
+  <div class="toolbar">
+    <h1>🧾 Invoice Maker</h1>
+    <span class="status" id="statusText"><span class="dot"></span>Ready</span>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost btn-sm" id="resetBtn" type="button">🔄 New</button>
+    <button class="btn btn-ghost btn-sm" id="btnCopy"  type="button">📋 Copy Text</button>
+    <button class="btn btn-accent btn-sm" id="btnSave" type="button">💾 Save</button>
+    <button class="btn btn-primary btn-sm" id="btnPDF" type="button">📄 PDF</button>
+    <button class="btn btn-accent btn-sm"  id="btnEmail" type="button">✉️ Email PDF</button>
+    <button class="btn btn-primary btn-sm" id="btnPrint" type="button">🖨️ Print</button>
+  </div>
+
+  <div class="work-grid">
+    <form id="mainForm" onsubmit="return false;" novalidate>
+
+      <div class="form-section">
+        <h3>Company Contact <span class="hint" style="font-weight:400;">(appears next to the logo)</span></h3>
+        <div class="form-row">
+          <div class="form-group" style="flex:2;"><label>Address</label><input id="headerAddress" placeholder="Cosy Nook, House 10, Road 4, Gulshan 1, Dhaka, Bangladesh"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Phone</label><input id="headerPhone" inputmode="tel" placeholder="+880 9613 500850"/></div>
+          <div class="form-group"><label>Email</label><input type="email" id="headerEmail" inputmode="email" placeholder="holidays@akijair.com"/></div>
+          <div class="form-group"><label>Website</label><input id="headerWebsite" placeholder="www.akijair.com"/></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Invoice Details</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Invoice Number <span class="req">*</span></label><input id="number" required autocomplete="off" /></div>
+          <div class="form-group"><label>Currency</label>
+            <select id="currency"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Invoice Date <span class="req">*</span></label><input type="date" id="invoiceDate" required /></div>
+          <div class="form-group"><label>Due Date</label><input type="date" id="dueDate" /></div>
+          <div class="form-group"><label>Status</label>
+            <select id="status">
+              <option value="">— None —</option>
+              <option>Draft</option><option>Sent</option><option>Paid</option><option>Overdue</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Bill To</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Client Name <span class="req">*</span></label><input id="clientName" required autocomplete="name" /></div>
+          <div class="form-group"><label>Company</label><input id="clientCompany" autocomplete="organization" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Address</label><input id="clientAddress" autocomplete="street-address" /></div>
+          <div class="form-group"><label>City</label><input id="clientCity" autocomplete="address-level2" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Email</label><input type="email" id="clientEmail" inputmode="email" autocomplete="email" /></div>
+          <div class="form-group"><label>Phone</label><input id="clientPhone" inputmode="tel" autocomplete="tel" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Line Items</h3>
+        <table class="items-editor">
+          <thead>
+            <tr>
+              <th style="width:50%">Description</th>
+              <th class="right">Qty</th>
+              <th class="right">Rate</th>
+              <th class="right">Amount</th>
+              <th style="width:34px"></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+        <div class="row mt-1">
+          <button type="button" class="btn btn-ghost btn-sm" id="addItemBtn">+ Add Line Item</button>
+          <div class="spacer"></div>
+          <div class="totals-mini">
+            <table>
+              <tr><td class="label">Subtotal</td><td id="miniSubtotal">0.00</td></tr>
+              <tr><td class="label">Tax</td><td id="miniTax">0.00</td></tr>
+              <tr><td class="label">Discount</td><td id="miniDisc">0.00</td></tr>
+              <tr class="grand"><td>Total</td><td id="miniTotal">0.00</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Totals &amp; Adjustments</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Tax Rate (%)</label><input type="number" id="taxRate" min="0" step="0.01" value="0" /></div>
+          <div class="form-group"><label>Discount</label><input type="number" id="discount" min="0" step="0.01" value="0" /></div>
+          <div class="form-group"><label>Fees / Charges</label><input type="number" id="shipping" min="0" step="0.01" value="0" /></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Payment Info — Bank Details <span class="hint" style="font-weight:400;">(add multiple banks if needed)</span></h3>
+        <div id="banksBody"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addBankBtn">+ Add another bank</button>
+      </div>
+
+      <div class="form-section">
+        <h3>Notes</h3>
+        <div class="form-group"><label>Notes / Special Instructions</label><textarea id="notes" rows="3"></textarea></div>
+      </div>
+    </form>
+
+    <div class="preview-wrap">
+      <h3>Live Preview</h3>
+      <div id="previewNode"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="doc-renderers.js"></script>
+<script src="doc-actions.js"></script>
+<script>
+const { CFG, Store, Toast, uid, nowIso, formatMoney, symbolFor, escapeHTML } = AkijApp;
+AkijApp.mountShell({ active: "invoice", title: "Invoice Maker", crumb: "Create · Invoice" });
+
+const $ = id => document.getElementById(id);
+const val = id => ($(id)?.value ?? "").trim();
+const numv = id => Number($(id)?.value) || 0;
+
+/* Currency dropdown */
+(function initCurrency() {
+  const sel = $("currency");
+  (CFG.CURRENCIES || [{code:"BDT",symbol:"৳"}]).forEach(c => {
+    const o = document.createElement("option");
+    o.value = c.code; o.textContent = `${c.code} (${c.symbol})`; sel.appendChild(o);
+  });
+})();
+
+let currentId = null;
+let items = [{ description: "", quantity: 1, rate: 0, amount: 0 }];
+let banks = [emptyBank()];
+
+function emptyBank() {
+  return { bankName: "", accountName: "", accountNumber: "", branchName: "", routingNumber: "" };
+}
+
+function renderBanks() {
+  const host = $("banksBody"); if (!host) return;
+  host.innerHTML = banks.map((b, i) => `
+    <div class="bank-card-ed" data-i="${i}">
+      <div class="bc-head-ed">
+        <span class="bc-title-ed"><span class="bc-num">${i + 1}</span> Bank ${i + 1}</span>
+        ${banks.length > 1 ? `<button type="button" class="remove-bank" data-bank-remove aria-label="Remove bank">✕</button>` : ""}
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Bank Name</label><input data-bk="bankName" value="${escapeHTML(b.bankName || "")}" placeholder="e.g., BRAC Bank PLC"/></div>
+        <div class="form-group"><label>Account Name</label><input data-bk="accountName" value="${escapeHTML(b.accountName || "")}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Account Number</label><input data-bk="accountNumber" value="${escapeHTML(b.accountNumber || "")}"/></div>
+        <div class="form-group"><label>Branch</label><input data-bk="branchName" value="${escapeHTML(b.branchName || "")}"/></div>
+        <div class="form-group"><label>Routing / IFSC</label><input data-bk="routingNumber" value="${escapeHTML(b.routingNumber || "")}"/></div>
+      </div>
+    </div>`).join("");
+  host.querySelectorAll("[data-bk]").forEach(el => {
+    el.addEventListener("input", (e) => {
+      const i = Number(e.target.closest(".bank-card-ed").dataset.i);
+      banks[i][e.target.dataset.bk] = e.target.value;
+      updatePreview();
+    });
+  });
+  host.querySelectorAll("[data-bank-remove]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const i = Number(e.target.closest(".bank-card-ed").dataset.i);
+      banks.splice(i, 1);
+      if (!banks.length) banks = [emptyBank()];
+      renderBanks();
+      updatePreview();
+    });
+  });
+}
+
+function computeTotals() {
+  const cur = val("currency") || "BDT";
+  const subtotal = items.reduce((s, it) => s + ((Number(it.quantity) || 0) * (Number(it.rate) || 0)), 0);
+  const discount = numv("discount");
+  const taxable  = Math.max(0, subtotal - discount);
+  const taxRate  = numv("taxRate");
+  const taxAmt   = +(taxable * taxRate / 100).toFixed(2);
+  const shipping = numv("shipping");
+  const total    = +(taxable + taxAmt + shipping).toFixed(2);
+  return { cur, subtotal: +subtotal.toFixed(2), discount, taxRate, taxAmount: taxAmt, shipping, total };
+}
+
+function renderItems() {
+  const cur = val("currency") || "BDT";
+  const body = $("itemsBody");
+  body.innerHTML = items.map((it, i) => `
+    <tr data-i="${i}">
+      <td><input data-k="description" placeholder="Description" value="${escapeHTML(it.description || "")}"/></td>
+      <td><input data-k="quantity" type="number" class="right" min="0" step="0.01" value="${it.quantity ?? 0}"/></td>
+      <td><input data-k="rate" type="number" class="right" min="0" step="0.01" value="${it.rate ?? 0}"/></td>
+      <td><input class="right readonly" readonly tabindex="-1" value="${symbolFor(cur)}${(Number(it.amount) || 0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}"/></td>
+      <td><button type="button" class="del-btn" aria-label="Remove line item" title="Remove">✕</button></td>
+    </tr>
+  `).join("");
+  body.querySelectorAll("input[data-k]").forEach(el => {
+    el.addEventListener("input", (e) => {
+      const tr = e.target.closest("tr"); const i = Number(tr.dataset.i);
+      const k = e.target.dataset.k;
+      items[i][k] = (k === "description") ? e.target.value : Number(e.target.value) || 0;
+      items[i].amount = (Number(items[i].quantity) || 0) * (Number(items[i].rate) || 0);
+      // Only refresh the amount cell + mini totals to avoid focus loss
+      const amtCell = tr.querySelector("input.readonly");
+      if (amtCell) amtCell.value = `${symbolFor(cur)}${items[i].amount.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+      updateMini(); updatePreview();
+    });
+  });
+  body.querySelectorAll(".del-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const tr = e.target.closest("tr"); const i = Number(tr.dataset.i);
+      if (items.length <= 1) { items = [{ description: "", quantity: 1, rate: 0, amount: 0 }]; }
+      else { items.splice(i, 1); }
+      renderItems(); updateMini(); updatePreview();
+    });
+  });
+}
+
+function updateMini() {
+  const t = computeTotals();
+  $("miniSubtotal").textContent = formatMoney(t.subtotal, t.cur);
+  $("miniTax").textContent      = formatMoney(t.taxAmount, t.cur);
+  $("miniDisc").textContent     = formatMoney(t.discount, t.cur);
+  $("miniTotal").textContent    = formatMoney(t.total, t.cur);
+}
+
+function buildDoc() {
+  const t = computeTotals();
+  return {
+    id: currentId || uid("invoice"),
+    type: "invoice",
+    number: val("number"),
+    currency: t.cur,
+    invoiceDate: val("invoiceDate"),
+    dueDate: val("dueDate"),
+    status: val("status"),
+    headerAddress: val("headerAddress"),
+    headerPhone:   val("headerPhone"),
+    headerEmail:   val("headerEmail"),
+    headerWebsite: val("headerWebsite"),
+    clientName: val("clientName"), clientCompany: val("clientCompany"),
+    clientAddress: val("clientAddress"), clientCity: val("clientCity"),
+    clientEmail: val("clientEmail"), clientPhone: val("clientPhone"),
+    items: items.map(it => ({ ...it, amount: (Number(it.quantity)||0) * (Number(it.rate)||0) })),
+    subtotal: t.subtotal, taxRate: t.taxRate, taxAmount: t.taxAmount,
+    discount: t.discount, shipping: t.shipping, total: t.total,
+    banks: banks.filter(b => (b.bankName || b.accountName || b.accountNumber || b.branchName || b.routingNumber || "").trim()),
+    notes: val("notes"),
+    createdAt: currentId ? (Store.get(currentId)?.createdAt || nowIso()) : nowIso(),
+    updatedAt: nowIso()
+  };
+}
+
+function validate() {
+  if (!val("number"))      return "Invoice number is required";
+  if (!val("invoiceDate")) return "Invoice date is required";
+  if (!val("clientName"))  return "Client name is required";
+  const valid = items.filter(it => (it.description || "").trim() || Number(it.amount) > 0);
+  if (!valid.length)       return "Add at least one line item";
+  return null;
+}
+
+const updatePreview = DocActions.makeDebouncedPreview($("previewNode"), buildDoc, 90);
+function setStatus(t, kind) {
+  const s = $("statusText");
+  s.className = "status" + (kind === "working" ? " working" : kind === "error" ? " error" : "");
+  s.innerHTML = `<span class="dot"></span>${escapeHTML(t)}`;
+}
+
+function prefill() {
+  const co = CFG.COMPANY || {}, bank = CFG.BANK || {};
+  $("number").value = Store.nextNumber("invoice");
+  $("invoiceDate").value = new Date().toISOString().split("T")[0];
+  const due = new Date(Date.now() + 7 * 86400000);
+  $("dueDate").value = due.toISOString().split("T")[0];
+  $("headerAddress").value = co.address || "";
+  $("headerPhone").value   = co.phone   || "";
+  $("headerEmail").value   = co.email   || "";
+  $("headerWebsite").value = co.website || "";
+  banks = [{
+    bankName:      bank.name    || "",
+    accountName:   bank.account || "",
+    accountNumber: bank.number  || "",
+    branchName:    bank.branch  || "",
+    routingNumber: bank.routing || ""
+  }];
+  renderBanks();
+}
+
+function loadFrom(d) {
+  currentId = d.id;
+  ["number","invoiceDate","dueDate","status","currency",
+   "headerAddress","headerPhone","headerEmail","headerWebsite",
+   "clientName","clientCompany","clientAddress","clientCity","clientEmail","clientPhone",
+   "notes"].forEach(k => { if ($(k)) $(k).value = d[k] || ""; });
+  $("taxRate").value  = d.taxRate  || 0;
+  $("discount").value = d.discount || 0;
+  $("shipping").value = d.shipping || 0;
+  items = Array.isArray(d.items) && d.items.length
+    ? d.items.map(it => ({ ...it, amount: (Number(it.quantity)||0) * (Number(it.rate)||0) }))
+    : [{ description: "", quantity: 1, rate: 0, amount: 0 }];
+  // Backwards-compat: legacy single-bank docs are auto-migrated into a 1-element array.
+  if (Array.isArray(d.banks) && d.banks.length) {
+    banks = d.banks.map(b => Object.assign(emptyBank(), b));
+  } else if (d.bankName || d.accountName || d.accountNumber || d.branchName || d.routingNumber) {
+    banks = [{
+      bankName:      d.bankName      || "",
+      accountName:   d.accountName   || "",
+      accountNumber: d.accountNumber || "",
+      branchName:    d.branchName    || "",
+      routingNumber: d.routingNumber || ""
+    }];
+  } else {
+    banks = [emptyBank()];
+  }
+  renderItems();
+  renderBanks();
+  setStatus(`Editing ${d.number}`);
+}
+
+document.querySelectorAll("#mainForm input, #mainForm textarea, #mainForm select").forEach(el => {
+  el.addEventListener("input", () => { updateMini(); updatePreview(); });
+  el.addEventListener("change", () => { updateMini(); updatePreview(); });
+});
+$("currency").addEventListener("change", () => { renderItems(); updateMini(); updatePreview(); });
+$("addItemBtn").addEventListener("click", () => {
+  items.push({ description: "", quantity: 1, rate: 0, amount: 0 });
+  renderItems(); updateMini(); updatePreview();
+  // Focus new row's description
+  const rows = $("itemsBody").querySelectorAll("tr");
+  rows[rows.length - 1]?.querySelector("input")?.focus();
+});
+$("addBankBtn").addEventListener("click", () => {
+  banks.push(emptyBank());
+  renderBanks(); updatePreview();
+  const cards = $("banksBody").querySelectorAll(".bank-card-ed");
+  cards[cards.length - 1]?.querySelector("input")?.focus();
+});
+$("resetBtn").addEventListener("click", () => {
+  if (!currentId || confirm("Start a new invoice? Unsaved changes will be lost.")) location.href = "invoice.html";
+});
+
+DocActions.attach({
+  btnSave: $("btnSave"), btnPrint: $("btnPrint"), btnPDF: $("btnPDF"), btnCopy: $("btnCopy"), btnEmail: $("btnEmail"),
+  getDoc: buildDoc, validate,
+  onSaved: (d) => { currentId = d.id; updatePreview(); },
+  setStatus
+});
+
+const params = new URLSearchParams(location.search);
+const id = params.get("id");
+if (id) {
+  const d = Store.get(id);
+  if (d) loadFrom(d);
+  else { prefill(); Toast.show("Invoice not found — starting new", "warn"); }
+} else {
+  prefill();
+}
+renderItems();
+renderBanks();
+updateMini();
+updatePreview();
+</script>
+</body>
+</html>
