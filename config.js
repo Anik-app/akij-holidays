@@ -10,7 +10,7 @@ window.APP_CONFIG = {
   BRAND_ACCENT: "#004aad",
 
   /* Google Apps Script Web-App URL — auto Google-Sheet logging. */
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwuZhFWYLBVlQyM2NO2SqVrVzzXUOQ32BXa7ZkCD7PzjK4NNKuXDNqk8gU_8mXDWHfV/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxMZWpMRYnNrbaVPJVND2-nG5M9XtkJ0qHqTlRCqZ9Vb6s-7wsHOfG6WaN45InxTtXU/exec",
 
   /* Target Google Sheet (opened from Cloud page) */
   SHEET_URL: "https://docs.google.com/spreadsheets/d/1EqWBeRUl7sYhU2Y16mv3DK57XWHTWSJbyv057J2epb8/edit?usp=sharing",
