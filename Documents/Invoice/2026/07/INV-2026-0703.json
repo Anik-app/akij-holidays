@@ -1,0 +1,45 @@
+{
+  "id": "invoice_mrrynjmb_rtuckv",
+  "type": "invoice",
+  "number": "INV-2026-0703",
+  "currency": "BDT",
+  "invoiceDate": "2026-07-19",
+  "dueDate": "2026-07-26",
+  "status": "",
+  "headerAddress": "Cosy Nook, House 10, Road 4, Gulshan 1, Dhaka, Bangladesh",
+  "headerPhone": "+880 9613 500850",
+  "headerEmail": "holidays@akijair.com",
+  "headerWebsite": "www.akijair.com",
+  "clientName": "wrewtetw",
+  "clientCompany": "weyery",
+  "clientAddress": "",
+  "clientCity": "",
+  "clientEmail": "",
+  "clientPhone": "",
+  "items": [
+    {
+      "description": "rehhe",
+      "quantity": 1,
+      "rate": 44440,
+      "amount": 44440
+    }
+  ],
+  "subtotal": 44440,
+  "taxRate": 0,
+  "taxAmount": 0,
+  "discount": 0,
+  "shipping": 0,
+  "total": 44440,
+  "banks": [
+    {
+      "bankName": "BRAC Bank PLC",
+      "accountName": "AKIJ LOGISTICS LTD",
+      "accountNumber": "2063890780001",
+      "branchName": "Gulshan",
+      "routingNumber": "060261726"
+    }
+  ],
+  "notes": "",
+  "createdAt": "2026-07-19T15:38:45.395Z",
+  "updatedAt": "2026-07-19T15:38:45.395Z"
+}
