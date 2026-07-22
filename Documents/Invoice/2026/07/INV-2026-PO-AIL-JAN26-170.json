@@ -1,0 +1,45 @@
+{
+  "id": "invoice_mrvq26cs_rg8ybb",
+  "type": "invoice",
+  "number": "INV-2026-PO-AIL-JAN26-170",
+  "currency": "BDT",
+  "invoiceDate": "2026-01-15",
+  "dueDate": "2026-01-28",
+  "status": "",
+  "headerAddress": "",
+  "headerPhone": "+880 9613 500850",
+  "headerEmail": "holidays@akijair.com",
+  "headerWebsite": "",
+  "clientName": "Md. Rasel Mahmud",
+  "clientCompany": "Akij Ispat Ltd",
+  "clientAddress": "Akij House 198, Bir Uttam Mir Shawkat Sarak",
+  "clientCity": "",
+  "clientEmail": "",
+  "clientPhone": "",
+  "items": [
+    {
+      "description": "Singapore VISA processing and Hotel for M/S Habib Enterprise - Keranigonj, Mr. Ahsan Habib & M/S Anima Enterprise - Gazipur, Mr. Md. Alim Khan",
+      "quantity": 1,
+      "rate": 157000,
+      "amount": 157000
+    }
+  ],
+  "subtotal": 157000,
+  "taxRate": 0,
+  "taxAmount": 0,
+  "discount": 0,
+  "shipping": 0,
+  "total": 157000,
+  "banks": [
+    {
+      "bankName": "BRAC Bank PLC",
+      "accountName": "AKIJ LOGISTICS LTD",
+      "accountNumber": "2063890780001",
+      "branchName": "Gulshan",
+      "routingNumber": "060261726"
+    }
+  ],
+  "notes": "",
+  "createdAt": "2026-07-22T06:49:16.204Z",
+  "updatedAt": "2026-07-22T06:49:16.205Z"
+}
